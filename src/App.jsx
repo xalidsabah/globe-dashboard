@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
-import Globe from './components/Globe'
+import { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react'
 import Sidebar from './components/Sidebar'
+import GlobeFallback from './components/GlobeFallback'
+
+const GlobeScene = lazy(() => import('./components/GlobeScene'))
 import TopBar from './components/TopBar'
 import LeftPromo from './components/LeftPromo'
 import StatsPanel from './components/StatsPanel'
@@ -318,27 +319,19 @@ export default function App() {
         {loading && <div className="top-progress" aria-hidden />}
 
         <div className="absolute inset-0">
-          <Canvas
-            camera={{ position: [0, 40, 240], fov: 45, near: 1, far: 2000 }}
-            dpr={[1, 1.75]}
-            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-            style={{ background: 'transparent' }}
-          >
-            <color attach="background" args={[dark ? '#050a14' : '#7fa8cc']} />
-            <Suspense fallback={null}>
-              <Globe
-                zoom={zoom}
-                autoRotate={autoRotate && mode === '3d'}
-                mode={mode}
-                resetToken={resetToken}
-                dark={dark}
-                focus={focus}
-                cities={citySnaps}
-                unit={unit}
-                onSelectCity={(city) => selectPlace(city, { openHourly: true })}
-              />
-            </Suspense>
-          </Canvas>
+          <Suspense fallback={<GlobeFallback dark={dark} />}>
+            <GlobeScene
+              zoom={zoom}
+              autoRotate={autoRotate && mode === '3d'}
+              mode={mode}
+              resetToken={resetToken}
+              dark={dark}
+              focus={focus}
+              cities={citySnaps}
+              unit={unit}
+              onSelectCity={(city) => selectPlace(city, { openHourly: true })}
+            />
+          </Suspense>
         </div>
 
         <div className="globe-vignette absolute inset-0 z-[1]" aria-hidden />
