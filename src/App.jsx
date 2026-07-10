@@ -1,0 +1,475 @@
+import { useCallback, useEffect, useMemo, useState, Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
+import Globe from './components/Globe'
+import Sidebar from './components/Sidebar'
+import TopBar from './components/TopBar'
+import LeftPromo from './components/LeftPromo'
+import StatsPanel from './components/StatsPanel'
+import BottomControls from './components/BottomControls'
+import BottomPanel from './components/BottomPanel'
+import HowItWorksModal from './components/HowItWorksModal'
+import SearchModal from './components/SearchModal'
+import SettingsModal from './components/SettingsModal'
+import { fetchWeather, fetchCitiesSnapshot, QUICK_CITIES } from './lib/weather'
+
+const DEFAULT_PLACE = {
+  id: 'city-New York',
+  name: 'New York',
+  country: 'United States',
+  admin1: '',
+  lat: 40.7128,
+  lng: -74.006,
+  timezone: 'America/New_York',
+  label: 'New York, United States',
+}
+
+const PREFS_KEY = 'wg-prefs'
+
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+function savePrefs(partial) {
+  try {
+    const prev = loadPrefs()
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ ...prev, ...partial }))
+  } catch {
+    /* ignore */
+  }
+}
+
+function toPlace(city) {
+  return {
+    id: city.id || `city-${city.name}`,
+    name: city.name,
+    country: city.country || '',
+    admin1: city.admin1 || '',
+    lat: city.lat,
+    lng: city.lng,
+    timezone: city.timezone || 'auto',
+    label: city.label || `${city.name}, ${city.country || ''}`.trim(),
+  }
+}
+
+export default function App() {
+  const prefs = loadPrefs()
+  const [dark, setDark] = useState(prefs.dark !== false)
+  const [mode, setMode] = useState('3d')
+  const [zoom, setZoom] = useState(1)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelMode, setPanelMode] = useState('hourly')
+  const [activeNav, setActiveNav] = useState('home')
+  const [howOpen, setHowOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [resetToken, setResetToken] = useState(0)
+  const [unit, setUnit] = useState(prefs.unit === 'F' ? 'F' : 'C')
+  const [place, setPlace] = useState(DEFAULT_PLACE)
+  const [weather, setWeather] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [liveMs, setLiveMs] = useState(null)
+  const [toast, setToast] = useState(null)
+  const [autoRotate, setAutoRotate] = useState(prefs.autoRotate !== false)
+  const [autoRefresh, setAutoRefresh] = useState(prefs.autoRefresh !== false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [citySnaps, setCitySnaps] = useState(
+    QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` }))
+  )
+
+  const showToast = useCallback((msg) => {
+    setToast(msg)
+    window.clearTimeout(showToast._t)
+    showToast._t = window.setTimeout(() => setToast(null), 2400)
+  }, [])
+
+  const loadWeather = useCallback(
+    async (p, { silent } = {}) => {
+      if (!p?.lat) return
+      setLoading(true)
+      const t0 = performance.now()
+      try {
+        const data = await fetchWeather(p.lat, p.lng, p.timezone || 'auto')
+        setWeather(data)
+        setLiveMs(Math.round(performance.now() - t0))
+        setCitySnaps((prev) =>
+          prev.map((c) =>
+            Math.abs(c.lat - p.lat) < 0.35 && Math.abs(c.lng - p.lng) < 0.35
+              ? { ...c, temp: data.current?.temp, icon: data.current?.icon, code: data.current?.code }
+              : c
+          )
+        )
+        if (!silent) {
+          const deg = data.current?.temp != null ? Math.round(data.current.temp) : '—'
+          showToast(`${p.name} · ${deg}°`)
+        }
+      } catch (e) {
+        console.error(e)
+        showToast('Could not load weather')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [showToast]
+  )
+
+  useEffect(() => {
+    loadWeather(DEFAULT_PLACE, { silent: true })
+    fetchCitiesSnapshot(QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` })))
+      .then(setCitySnaps)
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!autoRefresh || !place) return
+    const id = setInterval(() => loadWeather(place, { silent: true }), 5 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [autoRefresh, place, loadWeather])
+
+  useEffect(() => {
+    const onFs = () => setFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA'
+      if (e.key === 'Escape') {
+        if (searchOpen) setSearchOpen(false)
+        else if (settingsOpen) setSettingsOpen(false)
+        else if (howOpen) setHowOpen(false)
+        else if (userMenuOpen) setUserMenuOpen(false)
+        else if (panelOpen) {
+          setPanelOpen(false)
+          setActiveNav('home')
+        } else if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => {})
+        }
+        return
+      }
+      if (typing) return
+      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault()
+        setPanelOpen(false)
+        setSearchOpen(true)
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault()
+          toggleFullscreen()
+        }
+      } else if (e.key === 'h' || e.key === 'H') {
+        setPanelMode('hourly')
+        setPanelOpen(true)
+        setActiveNav('forecast')
+      } else if (e.key === 'd' || e.key === 'D') {
+        setPanelMode('analytics')
+        setPanelOpen(true)
+        setActiveNav('chart')
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchOpen, settingsOpen, howOpen, userMenuOpen, panelOpen])
+
+  const selectPlace = useCallback(
+    (p, { openHourly = true, fromSearch = false } = {}) => {
+      const placeObj = toPlace(p)
+      setPlace(placeObj)
+      setZoom(1.08)
+      setResetToken((n) => n + 1)
+      setFullscreen(false)
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+
+      if (fromSearch) {
+        setPanelOpen(false)
+        setActiveNav('home')
+      } else if (openHourly) {
+        setPanelMode('hourly')
+        setPanelOpen(true)
+        setActiveNav('forecast')
+      }
+      loadWeather(placeObj)
+    },
+    [loadWeather]
+  )
+
+  const handleNav = (id) => {
+    setActiveNav(id)
+    if (fullscreen) {
+      document.exitFullscreen?.().catch(() => {})
+      setFullscreen(false)
+    }
+    if (id === 'home') {
+      setPanelOpen(false)
+      setZoom(1)
+      setMode('3d')
+      setAutoRotate(true)
+      setResetToken((n) => n + 1)
+      showToast('Global view')
+    } else if (id === 'search') {
+      setPanelOpen(false)
+      setSearchOpen(true)
+    } else if (id === 'forecast') {
+      setPanelMode('hourly')
+      setPanelOpen(true)
+    } else if (id === 'chart') {
+      setPanelMode('analytics')
+      setPanelOpen(true)
+    } else if (id === 'alerts') {
+      setPanelMode('alerts')
+      setPanelOpen(true)
+    }
+  }
+
+  const handleResetView = () => {
+    setZoom(1)
+    setMode('3d')
+    setAutoRotate(true)
+    setResetToken((n) => n + 1)
+    showToast('View reset')
+  }
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        setPanelOpen(false)
+        await document.documentElement.requestFullscreen()
+        setFullscreen(true)
+        showToast('Fullscreen')
+      } else {
+        await document.exitFullscreen()
+        setFullscreen(false)
+      }
+    } catch {
+      setFullscreen((f) => {
+        const next = !f
+        if (next) setPanelOpen(false)
+        showToast(next ? 'Fullscreen' : 'Exit fullscreen')
+        return next
+      })
+    }
+  }
+
+  const setUnitPersist = (u) => {
+    setUnit(u)
+    savePrefs({ unit: u })
+  }
+
+  const setDarkPersist = (d) => {
+    setDark(d)
+    savePrefs({ dark: d })
+  }
+
+  const focus = useMemo(() => {
+    if (!place) return null
+    return { name: place.name, lat: place.lat, lng: place.lng, temp: weather?.current?.temp }
+  }, [place, weather])
+
+  return (
+    <div className={`app-shell relative h-full w-full overflow-hidden ${dark ? '' : 'light'}`}>
+      <div
+        className={`absolute overflow-hidden border shadow-2xl transition-all duration-300 ${
+          fullscreen ? 'inset-0 rounded-none border-0' : 'inset-3 rounded-2xl'
+        } ${
+          dark
+            ? 'border-white/[0.07] bg-[#050a14] shadow-black/50'
+            : 'border-slate-400/35 bg-[#8fafd0] shadow-slate-600/20'
+        }`}
+      >
+        {loading && <div className="top-progress" />}
+
+        <div className="absolute inset-0">
+          <Canvas
+            camera={{ position: [0, 40, 240], fov: 45, near: 1, far: 2000 }}
+            dpr={[1, 1.75]}
+            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+            style={{ background: 'transparent' }}
+          >
+            <color attach="background" args={[dark ? '#050a14' : '#7fa8cc']} />
+            <Suspense fallback={null}>
+              <Globe
+                zoom={zoom}
+                autoRotate={autoRotate && mode === '3d'}
+                mode={mode}
+                resetToken={resetToken}
+                dark={dark}
+                focus={focus}
+                cities={citySnaps}
+                unit={unit}
+                onSelectCity={(city) => selectPlace(city, { openHourly: true })}
+              />
+            </Suspense>
+          </Canvas>
+        </div>
+
+        <div className="globe-vignette absolute inset-0 z-[1]" />
+
+        {!fullscreen && (
+          <Sidebar
+            activeNav={activeNav}
+            onNav={handleNav}
+            dark={dark}
+            expanded={sidebarExpanded}
+            onToggleExpand={() => setSidebarExpanded((e) => !e)}
+            onSettings={() => setSettingsOpen(true)}
+            onLogout={() => {
+              setUserMenuOpen(false)
+              showToast('Signed out (demo)')
+            }}
+          />
+        )}
+
+        {!fullscreen && (
+          <TopBar
+            dark={dark}
+            sidebarWide={sidebarExpanded}
+            onToggleTheme={() => {
+              setDarkPersist(!dark)
+              showToast(!dark ? 'Dark theme' : 'Light theme')
+            }}
+            latency={liveMs}
+            placeName={place?.name}
+            userMenuOpen={userMenuOpen}
+            onUserMenu={() => setUserMenuOpen((v) => !v)}
+            onCloseUserMenu={() => setUserMenuOpen(false)}
+            unit={unit}
+            onToggleUnit={() => setUnitPersist(unit === 'C' ? 'F' : 'C')}
+            onSettings={() => setSettingsOpen(true)}
+            onLogout={() => showToast('Signed out (demo)')}
+            onOpenSearch={() => {
+              setPanelOpen(false)
+              setSearchOpen(true)
+            }}
+          />
+        )}
+
+        {!fullscreen && (
+          <>
+            <LeftPromo
+              dark={dark}
+              place={place}
+              weather={weather}
+              unit={unit}
+              onHowItWorks={() => setHowOpen(true)}
+              onOpenSearch={() => {
+                setPanelOpen(false)
+                setSearchOpen(true)
+              }}
+              styleLeft={sidebarExpanded ? 'left-[12rem]' : 'left-20'}
+            />
+            <StatsPanel
+              weather={weather}
+              unit={unit}
+              dark={dark}
+              refreshing={loading}
+              onRefresh={() => loadWeather(place)}
+              hourly={weather?.hourly || []}
+            />
+          </>
+        )}
+
+        <BottomControls
+          mode={mode}
+          onModeChange={(m) => {
+            setMode(m)
+            setResetToken((n) => n + 1)
+            if (m === '2d') setAutoRotate(false)
+            showToast(m === '3d' ? '3D mode' : '2D mode')
+          }}
+          onZoomIn={() => setZoom((z) => Math.min(2.2, +(z + 0.18).toFixed(2)))}
+          onZoomOut={() => setZoom((z) => Math.max(0.5, +(z - 0.18).toFixed(2)))}
+          onResetView={handleResetView}
+          onExpandPanel={() => {
+            setPanelMode('hourly')
+            setPanelOpen(true)
+            setActiveNav('forecast')
+          }}
+          panelOpen={panelOpen && !fullscreen}
+          dark={dark}
+          fullscreen={fullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
+
+        <BottomPanel
+          open={panelOpen && !fullscreen}
+          onClose={() => {
+            setPanelOpen(false)
+            setActiveNav('home')
+          }}
+          weather={weather}
+          unit={unit}
+          dark={dark}
+          place={place}
+          mode={panelMode}
+          onModeChange={(m) => {
+            setPanelMode(m)
+            setActiveNav(m === 'hourly' ? 'forecast' : m === 'analytics' ? 'chart' : 'alerts')
+          }}
+          sidebarWide={sidebarExpanded}
+          loading={loading}
+        />
+
+        <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} dark={dark} />
+        <SearchModal
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onSelect={(p) => selectPlace(p, { fromSearch: true })}
+          dark={dark}
+        />
+        <SettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          dark={dark}
+          unit={unit}
+          onToggleUnit={() => setUnitPersist(unit === 'C' ? 'F' : 'C')}
+          autoRotate={autoRotate}
+          onToggleAutoRotate={() => {
+            setAutoRotate((v) => {
+              savePrefs({ autoRotate: !v })
+              return !v
+            })
+          }}
+          autoRefresh={autoRefresh}
+          onToggleAutoRefresh={() => {
+            setAutoRefresh((v) => {
+              savePrefs({ autoRefresh: !v })
+              return !v
+            })
+          }}
+        />
+
+        {fullscreen && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="pointer-events-auto absolute right-4 top-4 z-50 glass-pill rounded-full px-3.5 py-1.5 text-xs font-medium text-white/85"
+          >
+            Exit fullscreen · <kbd className="kbd">Esc</kbd>
+          </button>
+        )}
+
+        {toast && (
+          <div
+            className={`toast-enter pointer-events-none absolute bottom-24 left-1/2 z-50 rounded-full border px-4 py-2 text-xs shadow-lg backdrop-blur-md ${
+              dark
+                ? 'border-white/10 bg-black/75 text-white/90'
+                : 'border-slate-300 bg-white text-slate-800'
+            }`}
+          >
+            {toast}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
