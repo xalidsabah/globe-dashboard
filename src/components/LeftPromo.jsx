@@ -1,6 +1,7 @@
 import WeatherIcon from './WeatherIcon'
 import StarButton from './StarButton'
 import { samePlace } from '../lib/places'
+import useQuietExpand from '../hooks/useQuietExpand'
 
 export default function LeftPromo({
   dark,
@@ -16,6 +17,7 @@ export default function LeftPromo({
   hidden,
   styleLeft = 'left-20',
 }) {
+  const forceOpen = useQuietExpand()
   if (hidden) return null
 
   const c = weather?.current
@@ -30,41 +32,46 @@ export default function LeftPromo({
 
   return (
     <div
-      className={`pointer-events-none absolute top-[38%] z-20 max-w-[200px] -translate-y-1/2 transition-all duration-300 sm:max-w-[220px] ${styleLeft}`}
+      className={`quiet-panel pointer-events-none absolute top-[38%] z-20 max-w-[200px] -translate-y-1/2 transition-all duration-300 sm:max-w-[220px] ${styleLeft} ${
+        forceOpen ? 'is-open' : ''
+      }`}
     >
-      {/* Marketing copy kept — one quiet line, not a billboard */}
-      <p className={`text-[11px] leading-snug ${mute}`}>
-        <span className={soft}>Live weather.</span> Plan your day with weather
-        <span className="text-amber-400/70"> ✦</span>
-      </p>
-
-      <div className="pointer-events-auto mt-2 flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={onHowItWorks}
-          className={`text-[11px] transition ${
-            dark ? 'text-amber-400/70 hover:text-amber-300' : 'text-amber-600/80 hover:text-amber-700'
-          }`}
-        >
-          How it works
-        </button>
-        <span className={dark ? 'text-white/15' : 'text-slate-300'} aria-hidden>
-          ·
-        </span>
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          className={`text-[11px] transition ${
-            dark ? 'text-white/35 hover:text-white/70' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Search <kbd className="kbd ml-0.5 opacity-70">/</kbd>
-        </button>
+      {/* Secondary: marketing + links — hover / focus / touch */}
+      <div className="quiet-secondary quiet-gap-lg pointer-events-auto">
+        <p className={`text-[11px] leading-snug ${mute}`}>
+          <span className={soft}>Live weather.</span> Plan your day with weather
+          <span className="text-amber-400/70"> ✦</span>
+        </p>
+        <div className="mt-2 flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onHowItWorks}
+            className={`text-[11px] transition ${
+              dark
+                ? 'text-amber-400/70 hover:text-amber-300'
+                : 'text-amber-600/80 hover:text-amber-700'
+            }`}
+          >
+            How it works
+          </button>
+          <span className={dark ? 'text-white/15' : 'text-slate-300'} aria-hidden>
+            ·
+          </span>
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className={`text-[11px] transition ${
+              dark ? 'text-white/35 hover:text-white/70' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Search <kbd className="kbd ml-0.5 opacity-70">/</kbd>
+          </button>
+        </div>
       </div>
 
-      {/* Primary: place card only */}
+      {/* Primary: place card — always visible */}
       <div
-        className={`pointer-events-auto mt-6 flex items-center gap-2 rounded-2xl border px-2.5 py-2 backdrop-blur-md ${
+        className={`pointer-events-auto mt-2 flex items-center gap-2 rounded-2xl border px-2.5 py-2 backdrop-blur-md ${
           dark
             ? 'border-white/[0.08] bg-black/40 text-white'
             : 'border-slate-200/80 bg-white/85 text-slate-800 shadow-sm'
@@ -88,8 +95,9 @@ export default function LeftPromo({
         )}
       </div>
 
+      {/* Secondary: favorite chips */}
       {otherFavs.length > 0 && (
-        <div className="pointer-events-auto mt-1.5 flex flex-wrap gap-1">
+        <div className="quiet-secondary quiet-gap pointer-events-auto flex flex-wrap gap-1">
           {otherFavs.map((f) => (
             <button
               key={`${f.lat},${f.lng}`}

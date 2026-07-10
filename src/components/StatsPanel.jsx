@@ -1,5 +1,6 @@
 import WeatherIcon from './WeatherIcon'
 import { windDir } from '../lib/weather'
+import useQuietExpand from '../hooks/useQuietExpand'
 
 function temp(c, unit) {
   if (c == null) return '—'
@@ -21,6 +22,7 @@ export default function StatsPanel({
   hidden,
   hourly = [],
 }) {
+  const forceOpen = useQuietExpand()
   if (hidden) return null
 
   const c = weather?.current
@@ -62,14 +64,16 @@ export default function StatsPanel({
 
   return (
     <div className="pointer-events-none absolute right-3 top-[30%] z-20 flex -translate-y-1/2 flex-col items-end sm:right-5 fade-in">
-      {/* One quiet card — all words kept, less chrome */}
       <div
-        className={`pointer-events-auto w-[168px] rounded-2xl border px-3.5 py-3 backdrop-blur-md sm:w-[180px] ${
+        className={`quiet-panel pointer-events-auto w-[168px] rounded-2xl border px-3.5 py-3 backdrop-blur-md sm:w-[180px] ${
+          forceOpen ? 'is-open' : ''
+        } ${
           dark
             ? 'border-white/[0.07] bg-black/40'
             : 'border-slate-200/70 bg-white/80 shadow-sm'
         }`}
       >
+        {/* Primary header + temp */}
         <div className="flex items-center justify-between gap-2">
           <div className={`flex min-w-0 items-center gap-1.5 text-[10px] ${mute}`}>
             <span>WX</span>
@@ -105,7 +109,6 @@ export default function StatsPanel({
                 strokeLinecap="round"
               />
             </svg>
-            {/* Word kept for a11y / screen readers */}
             <span className="sr-only">{refreshing ? 'Updating' : 'Refresh'}</span>
           </button>
         </div>
@@ -113,7 +116,7 @@ export default function StatsPanel({
         <p className={`mt-3 text-[10px] ${mute}`}>Now</p>
 
         {refreshing && !c ? (
-          <div className="skeleton mt-1 h-9 w-20 ml-auto" />
+          <div className="skeleton mt-1 ml-auto h-9 w-20" />
         ) : (
           <div className="mt-0.5 flex items-start justify-end gap-0.5">
             <span
@@ -127,15 +130,16 @@ export default function StatsPanel({
           </div>
         )}
 
+        {/* Secondary: feels + sparkline + metrics */}
         {c?.feels != null && (
-          <p className={`mt-1 text-right text-[11px] ${mute}`}>
+          <p className={`quiet-secondary quiet-gap text-right text-[11px] ${mute}`}>
             Feels like {temp(c.feels, unit)}°
           </p>
         )}
 
         {temps.length > 2 && (
           <div
-            className="mt-3 flex h-7 w-full items-end gap-px opacity-80"
+            className="quiet-secondary quiet-gap flex h-7 w-full items-end gap-px opacity-80"
             title="Next 12 hours"
           >
             {temps.map((v, i) => (
@@ -150,8 +154,11 @@ export default function StatsPanel({
           </div>
         )}
 
-        {/* Metrics: label very quiet, value calm — no grid of boxes */}
-        <ul className="mt-3 space-y-1.5 border-t border-white/5 pt-2.5">
+        <ul
+          className={`quiet-secondary quiet-rule space-y-1.5 border-t ${
+            dark ? 'border-white/5' : 'border-slate-200/80'
+          }`}
+        >
           {metrics.map((row) => (
             <li key={row.label} className="flex items-baseline justify-between gap-2 text-right">
               <span className={`text-[10px] ${mute}`}>{row.label}</span>

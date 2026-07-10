@@ -504,6 +504,92 @@ button:disabled {
   border-radius: 2px 2px 0 0;
 }
 
+/*
+ * Progressive disclosure — secondary copy stays in the DOM (all words kept)
+ * but is visually quiet until hover / focus-within / force-open.
+ */
+.quiet-panel .quiet-secondary {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.28s ease,
+    max-height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.28s ease,
+    margin 0.28s ease,
+    border-color 0.2s ease,
+    padding 0.28s ease;
+}
+
+.quiet-panel:hover .quiet-secondary,
+.quiet-panel:focus-within .quiet-secondary,
+.quiet-panel.is-open .quiet-secondary {
+  opacity: 1;
+  max-height: 220px;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Secondary blocks that need a little top spacing when open */
+.quiet-panel:hover .quiet-secondary.quiet-gap,
+.quiet-panel:focus-within .quiet-secondary.quiet-gap,
+.quiet-panel.is-open .quiet-secondary.quiet-gap {
+  margin-top: 0.5rem !important;
+}
+
+.quiet-panel:hover .quiet-secondary.quiet-gap-lg,
+.quiet-panel:focus-within .quiet-secondary.quiet-gap-lg,
+.quiet-panel.is-open .quiet-secondary.quiet-gap-lg {
+  margin-top: 1.25rem !important;
+}
+
+/* Metrics divider only when secondary open */
+.quiet-panel .quiet-secondary.quiet-rule {
+  border-top-color: transparent;
+  padding-top: 0;
+}
+.quiet-panel:hover .quiet-secondary.quiet-rule,
+.quiet-panel:focus-within .quiet-secondary.quiet-rule,
+.quiet-panel.is-open .quiet-secondary.quiet-rule {
+  border-top-color: rgba(255, 255, 255, 0.05);
+  padding-top: 0.625rem;
+  margin-top: 0.75rem !important;
+}
+.app-shell.light .quiet-panel:hover .quiet-secondary.quiet-rule,
+.app-shell.light .quiet-panel:focus-within .quiet-secondary.quiet-rule,
+.app-shell.light .quiet-panel.is-open .quiet-secondary.quiet-rule {
+  border-top-color: rgba(100, 130, 170, 0.2);
+}
+
+/* Touch / reduced-motion: always show secondary (handled via .is-open from JS too) */
+@media (pointer: coarse) {
+  .quiet-panel .quiet-secondary {
+    opacity: 1;
+    max-height: none;
+    transform: none;
+    pointer-events: auto;
+    overflow: visible;
+  }
+  .quiet-panel .quiet-secondary.quiet-gap {
+    margin-top: 0.5rem !important;
+  }
+  .quiet-panel .quiet-secondary.quiet-gap-lg {
+    margin-top: 1.25rem !important;
+  }
+  .quiet-panel .quiet-secondary.quiet-rule {
+    border-top-color: rgba(255, 255, 255, 0.05);
+    padding-top: 0.625rem;
+    margin-top: 0.75rem !important;
+  }
+  .app-shell.light .quiet-panel .quiet-secondary.quiet-rule {
+    border-top-color: rgba(100, 130, 170, 0.2);
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .app-aurora::before,
@@ -522,6 +608,26 @@ button:disabled {
 
   .bottom-panel {
     transition: opacity 0.15s ease;
+  }
+
+  .quiet-panel .quiet-secondary {
+    opacity: 1 !important;
+    max-height: none !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+    transition: none !important;
+  }
+  .quiet-panel .quiet-secondary.quiet-gap {
+    margin-top: 0.5rem !important;
+  }
+  .quiet-panel .quiet-secondary.quiet-gap-lg {
+    margin-top: 1.25rem !important;
+  }
+  .quiet-panel .quiet-secondary.quiet-rule {
+    border-top-color: rgba(255, 255, 255, 0.05) !important;
+    padding-top: 0.625rem !important;
+    margin-top: 0.75rem !important;
   }
 }
 
