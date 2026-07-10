@@ -63,7 +63,12 @@ export default function SettingsModal({
   ]
 
   return (
-    <div className="absolute inset-0 z-[80] flex items-center justify-center p-5">
+    <div
+      className="absolute inset-0 z-[80] flex items-center justify-center p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Settings"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -72,7 +77,7 @@ export default function SettingsModal({
       />
 
       <div
-        className={`relative w-full max-w-md overflow-hidden rounded-3xl shadow-2xl ${
+        className={`modal-enter relative w-full max-w-md overflow-hidden rounded-3xl shadow-2xl ${
           dark
             ? 'border border-white/10 bg-[#0a1220]/95 backdrop-blur-2xl'
             : 'border border-slate-200 bg-white/96 backdrop-blur-2xl'

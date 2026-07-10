@@ -30,22 +30,22 @@ export default function LeftPromo({
       className={`pointer-events-none absolute top-[36%] z-20 max-w-[240px] -translate-y-1/2 transition-all duration-300 ${styleLeft}`}
     >
       <p
-        className={`mb-1 text-[11px] font-medium tracking-wide ${
-          dark ? 'text-white/40' : 'text-slate-600'
+        className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+          dark ? 'text-sky-300/70' : 'text-sky-700/80'
         }`}
       >
-        AI-Powered
+        Live weather
       </p>
       <h2
-        className={`text-[25px] font-semibold leading-[1.18] tracking-tight ${
+        className={`text-[24px] font-semibold leading-[1.15] tracking-tight sm:text-[26px] ${
           dark ? 'text-white' : 'text-slate-900'
         }`}
       >
-        Plan Your
+        Plan your
         <br />
-        Day with
+        day with
         <br />
-        Weather <span className="text-amber-400">✦</span>
+        weather <span className="text-amber-400">✦</span>
       </h2>
 
       <div className="pointer-events-auto mt-3 flex flex-wrap items-center gap-2">

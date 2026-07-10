@@ -81,23 +81,33 @@ export default function BottomPanel({
       style={{ paddingLeft: sidebarWide ? '11.5rem' : '4.25rem' }}
       aria-hidden={!open}
     >
-      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-2xl">
-        {/* Drag handle */}
+      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-2xl shadow-2xl">
         <button
           type="button"
           onClick={onClose}
-          className={`absolute left-1/2 top-2 z-10 flex h-5 w-12 -translate-x-1/2 items-center justify-center ${
+          className={`absolute left-1/2 top-2 z-10 flex h-5 w-14 -translate-x-1/2 items-center justify-center ${
             dark ? 'text-white/35 hover:text-white/70' : 'text-slate-400 hover:text-slate-700'
           }`}
           aria-label="Collapse panel"
         >
-          <div className={`h-1 w-9 rounded-full ${dark ? 'bg-white/25' : 'bg-slate-300'}`} />
+          <div
+            className={`h-1 w-10 rounded-full transition ${
+              dark ? 'bg-white/30 hover:bg-white/50' : 'bg-slate-300 hover:bg-slate-400'
+            }`}
+          />
         </button>
 
-        {/* Header + tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 px-4 pb-3 pt-7 md:px-5">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 border-b px-4 pb-3 pt-7 md:px-5 ${
+            dark ? 'border-white/[0.06]' : 'border-slate-200/80'
+          }`}
+        >
           <div className="min-w-0">
-            <h3 className={`truncate text-sm font-medium tracking-wide ${dark ? 'text-white/95' : 'text-slate-900'}`}>
+            <h3
+              className={`truncate text-sm font-semibold tracking-wide ${
+                dark ? 'text-white/95' : 'text-slate-900'
+              }`}
+            >
               {place?.name || 'Select a city'}
               {place?.country ? (
                 <span className={`font-normal ${dark ? 'text-white/40' : 'text-slate-400'}`}>
@@ -106,7 +116,7 @@ export default function BottomPanel({
                 </span>
               ) : null}
             </h3>
-            <p className={`mt-0.5 text-[11px] ${dark ? 'text-white/35' : 'text-slate-500'}`}>
+            <p className={`mt-0.5 text-[11px] ${dark ? 'text-white/40' : 'text-slate-500'}`}>
               {c ? (
                 <>
                   {t(c.temp, unit)}°{unit} · {c.label}

@@ -215,7 +215,7 @@ export default function SearchModal({
       />
 
       <div
-        className={`relative w-full max-w-xl overflow-hidden rounded-3xl shadow-2xl ${
+        className={`modal-enter relative w-full max-w-xl overflow-hidden rounded-3xl shadow-2xl ${
           dark
             ? 'border border-white/10 bg-[#0a1220]/95 backdrop-blur-2xl'
             : 'border border-slate-200/90 bg-white/95 backdrop-blur-2xl'

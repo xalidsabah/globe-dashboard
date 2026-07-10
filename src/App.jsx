@@ -286,6 +286,16 @@ export default function App() {
     savePrefs({ dark: d })
   }
 
+  useEffect(() => {
+    try {
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', dark ? '#050a14' : '#9ebbd8')
+    } catch {
+      /* ignore */
+    }
+  }, [dark])
+
   const focus = useMemo(() => {
     if (!place) return null
     return { name: place.name, lat: place.lat, lng: place.lng, temp: weather?.current?.temp }
@@ -293,16 +303,19 @@ export default function App() {
 
   return (
     <div className={`app-shell relative h-full w-full overflow-hidden ${dark ? '' : 'light'}`}>
+      <div className="app-aurora" aria-hidden />
       <div
-        className={`absolute overflow-hidden border shadow-2xl transition-all duration-300 ${
-          fullscreen ? 'inset-0 rounded-none border-0' : 'inset-3 rounded-2xl'
+        className={`stage-frame absolute overflow-hidden border transition-all duration-300 ${
+          fullscreen
+            ? 'is-fullscreen inset-0 rounded-none border-0'
+            : 'inset-2 rounded-2xl sm:inset-3 sm:rounded-[1.25rem]'
         } ${
           dark
-            ? 'border-white/[0.07] bg-[#050a14] shadow-black/50'
-            : 'border-slate-400/35 bg-[#8fafd0] shadow-slate-600/20'
+            ? 'border-white/[0.08] bg-[#050a14]'
+            : 'border-white/40 bg-[#8fafd0]'
         }`}
       >
-        {loading && <div className="top-progress" />}
+        {loading && <div className="top-progress" aria-hidden />}
 
         <div className="absolute inset-0">
           <Canvas
@@ -328,7 +341,7 @@ export default function App() {
           </Canvas>
         </div>
 
-        <div className="globe-vignette absolute inset-0 z-[1]" />
+        <div className="globe-vignette absolute inset-0 z-[1]" aria-hidden />
 
         {!fullscreen && (
           <Sidebar
@@ -486,10 +499,11 @@ export default function App() {
 
         {toast && (
           <div
-            className={`toast-enter pointer-events-none absolute bottom-24 left-1/2 z-50 rounded-full border px-4 py-2 text-xs shadow-lg backdrop-blur-md ${
+            role="status"
+            className={`toast-enter pointer-events-none absolute bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-full border px-4 py-2 text-xs font-medium shadow-xl backdrop-blur-md ${
               dark
-                ? 'border-white/10 bg-black/75 text-white/90'
-                : 'border-slate-300 bg-white text-slate-800'
+                ? 'border-white/12 bg-black/80 text-white/92'
+                : 'border-slate-200 bg-white text-slate-800 shadow-slate-300/40'
             }`}
           >
             {toast}
