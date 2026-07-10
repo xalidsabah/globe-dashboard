@@ -242,11 +242,7 @@ export default function SearchModal({
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <p
-              className={`text-[10px] font-medium uppercase tracking-[0.14em] ${
-                dark ? 'text-white/30' : 'text-slate-400'
-              }`}
-            >
+            <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
               Find a city
             </p>
             <input
@@ -339,14 +335,10 @@ export default function SearchModal({
               <div key={`${r.group}-${placeKey(r)}`}>
                 {showHead && label && (
                   <div className="flex items-center justify-between px-5 pb-1.5 pt-3">
-                    <p
-                      className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                        dark ? 'text-white/28' : 'text-slate-400'
-                      }`}
-                    >
+                    <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
                       {label}
                       {r.group === 'favorite' && favorites.length > 0 && (
-                        <span className="ml-1.5 font-normal opacity-70">{favorites.length}</span>
+                        <span className="ml-1.5 opacity-60">{favorites.length}</span>
                       )}
                     </p>
                     {r.group === 'recent' && recent.length > 0 && (

@@ -26,6 +26,19 @@ body,
   color: #fff;
 }
 
+/* Visually hidden but present for screen readers / word retention */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* —— Dark glass —— */
 .glass {
   background: rgba(10, 16, 30, 0.72);
@@ -90,9 +103,9 @@ body,
   content: "";
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.45;
-  animation: aurora-drift 18s ease-in-out infinite alternate;
+  filter: blur(90px);
+  opacity: 0.28;
+  animation: aurora-drift 22s ease-in-out infinite alternate;
 }
 
 .app-aurora::before {

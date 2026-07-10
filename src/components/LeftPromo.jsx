@@ -25,96 +25,84 @@ export default function LeftPromo({
 
   const otherFavs = favorites.filter((f) => !samePlace(f, place)).slice(0, 4)
 
+  const mute = dark ? 'text-white/30' : 'text-slate-500/80'
+  const soft = dark ? 'text-white/50' : 'text-slate-600'
+
   return (
     <div
-      className={`pointer-events-none absolute top-[36%] z-20 max-w-[240px] -translate-y-1/2 transition-all duration-300 ${styleLeft}`}
+      className={`pointer-events-none absolute top-[38%] z-20 max-w-[200px] -translate-y-1/2 transition-all duration-300 sm:max-w-[220px] ${styleLeft}`}
     >
-      <p
-        className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-          dark ? 'text-sky-300/70' : 'text-sky-700/80'
-        }`}
-      >
-        Live weather
+      {/* Marketing copy kept — one quiet line, not a billboard */}
+      <p className={`text-[11px] leading-snug ${mute}`}>
+        <span className={soft}>Live weather.</span> Plan your day with weather
+        <span className="text-amber-400/70"> ✦</span>
       </p>
-      <h2
-        className={`text-[24px] font-semibold leading-[1.15] tracking-tight sm:text-[26px] ${
-          dark ? 'text-white' : 'text-slate-900'
-        }`}
-      >
-        Plan your
-        <br />
-        day with
-        <br />
-        weather <span className="text-amber-400">✦</span>
-      </h2>
 
-      <div className="pointer-events-auto mt-3 flex flex-wrap items-center gap-2">
+      <div className="pointer-events-auto mt-2 flex items-center gap-2.5">
         <button
           type="button"
           onClick={onHowItWorks}
-          className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-400 transition hover:text-amber-300"
+          className={`text-[11px] transition ${
+            dark ? 'text-amber-400/70 hover:text-amber-300' : 'text-amber-600/80 hover:text-amber-700'
+          }`}
         >
           How it works
         </button>
-        <span className={dark ? 'text-white/20' : 'text-slate-300'}>·</span>
+        <span className={dark ? 'text-white/15' : 'text-slate-300'} aria-hidden>
+          ·
+        </span>
         <button
           type="button"
           onClick={onOpenSearch}
-          className={`text-[11px] font-medium ${
-            dark ? 'text-white/45 hover:text-white/80' : 'text-slate-500 hover:text-slate-800'
+          className={`text-[11px] transition ${
+            dark ? 'text-white/35 hover:text-white/70' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          Search <kbd className="kbd ml-0.5">/</kbd>
+          Search <kbd className="kbd ml-0.5 opacity-70">/</kbd>
         </button>
       </div>
 
+      {/* Primary: place card only */}
       <div
-        className={`pointer-events-auto mt-10 flex items-center gap-2 rounded-2xl border px-3 py-2.5 backdrop-blur-md ${
+        className={`pointer-events-auto mt-6 flex items-center gap-2 rounded-2xl border px-2.5 py-2 backdrop-blur-md ${
           dark
-            ? 'border-white/10 bg-black/35 text-white'
-            : 'border-slate-200/90 bg-white/90 text-slate-800 shadow-sm'
+            ? 'border-white/[0.08] bg-black/40 text-white'
+            : 'border-slate-200/80 bg-white/85 text-slate-800 shadow-sm'
         }`}
       >
-        <span className={dark ? 'text-sky-300' : 'text-sky-500'}>
-          <WeatherIcon icon={c?.icon || 'cloud'} size={28} isDay={c?.isDay !== false} />
+        <span className={`shrink-0 ${dark ? 'text-sky-300/90' : 'text-sky-500'}`}>
+          <WeatherIcon icon={c?.icon || 'cloud'} size={24} isDay={c?.isDay !== false} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{place?.name || '—'}</p>
-          <p className={`truncate text-[11px] ${dark ? 'text-white/40' : 'text-slate-500'}`}>
+          <p className="truncate text-[13px] font-medium leading-tight">{place?.name || '—'}</p>
+          <p className={`truncate text-[10px] leading-tight ${mute}`}>
             {c?.label || 'Loading…'}
           </p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-xl font-semibold tabular-nums leading-none">
-            {display}
-            <span className="text-sm font-medium opacity-40">°</span>
-          </p>
-        </div>
+        <p className="shrink-0 text-lg font-medium tabular-nums leading-none tracking-tight">
+          {display}
+          <span className="text-xs font-normal opacity-35">°</span>
+        </p>
         {place && onToggleFavorite && (
-          <StarButton
-            size="sm"
-            filled={isFavorite}
-            dark={dark}
-            onClick={onToggleFavorite}
-          />
+          <StarButton size="sm" filled={isFavorite} dark={dark} onClick={onToggleFavorite} />
         )}
       </div>
 
       {otherFavs.length > 0 && (
-        <div className="pointer-events-auto mt-2 flex flex-wrap gap-1.5">
+        <div className="pointer-events-auto mt-1.5 flex flex-wrap gap-1">
           {otherFavs.map((f) => (
             <button
               key={`${f.lat},${f.lng}`}
               type="button"
               onClick={() => onSelectFavorite?.(f)}
               title={f.label || f.name}
-              className={`max-w-full truncate rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+              className={`max-w-full truncate rounded-full px-2 py-0.5 text-[10px] transition ${
                 dark
-                  ? 'border-white/10 bg-black/30 text-white/70 hover:border-amber-400/30 hover:text-amber-200'
-                  : 'border-slate-200 bg-white/80 text-slate-600 hover:border-amber-300 hover:text-amber-700'
+                  ? 'text-white/40 hover:bg-white/5 hover:text-amber-200/90'
+                  : 'text-slate-500 hover:bg-white/70 hover:text-amber-700'
               }`}
             >
-              <span className="text-amber-400/90" aria-hidden>
+              <span className="opacity-60" aria-hidden>
                 ★
               </span>{' '}
               {f.name}

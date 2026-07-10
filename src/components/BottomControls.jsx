@@ -79,8 +79,8 @@ export default function BottomControls({
         className={`pointer-events-auto absolute right-3 z-30 flex items-center gap-1.5 transition-all duration-300 sm:right-5 ${lift}`}
       >
         <span
-          className={`mr-0.5 hidden text-[10px] font-semibold uppercase tracking-[0.16em] sm:inline ${
-            dark ? 'text-white/35' : 'text-slate-500'
+          className={`mr-1 hidden text-[10px] sm:inline ${
+            dark ? 'text-white/25' : 'text-slate-400'
           }`}
         >
           Zoom

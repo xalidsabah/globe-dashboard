@@ -57,139 +57,116 @@ export default function StatsPanel({
     },
   ]
 
+  const mute = dark ? 'text-white/30' : 'text-slate-400'
+  const main = dark ? 'text-white' : 'text-slate-900'
+
   return (
-    <div className="pointer-events-none absolute right-3 top-[28%] z-20 flex -translate-y-1/2 flex-col items-end gap-2.5 sm:right-5 sm:top-[30%] sm:gap-3 fade-in">
+    <div className="pointer-events-none absolute right-3 top-[30%] z-20 flex -translate-y-1/2 flex-col items-end sm:right-5 fade-in">
+      {/* One quiet card — all words kept, less chrome */}
       <div
-        className={`glass-soft flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-medium ${
-          dark ? 'text-white/50' : 'text-slate-600'
+        className={`pointer-events-auto w-[168px] rounded-2xl border px-3.5 py-3 backdrop-blur-md sm:w-[180px] ${
+          dark
+            ? 'border-white/[0.07] bg-black/40'
+            : 'border-slate-200/70 bg-white/80 shadow-sm'
         }`}
       >
-        <span className={`uppercase tracking-wider ${dark ? 'text-white/35' : 'text-slate-400'}`}>
-          WX
-        </span>
-        <span className={dark ? 'text-sky-300/90' : 'text-sky-600'}>
-          <WeatherIcon icon={c?.icon || 'cloud'} size={14} isDay={c?.isDay !== false} />
-        </span>
-        {c?.label && (
-          <span className={`max-w-[110px] truncate ${dark ? 'text-white/60' : 'text-slate-600'}`}>
-            {c.label}
-          </span>
-        )}
-      </div>
-
-      <div className="text-right">
-        <p
-          className={`text-[11px] font-medium uppercase tracking-[0.16em] ${
-            dark ? 'text-white/35' : 'text-slate-500'
-          }`}
-        >
-          Now
-        </p>
-
-        <div className="mt-1 flex items-start justify-end gap-2">
-          <div>
-            {refreshing && !c ? (
-              <div className="skeleton ml-auto h-11 w-24" />
-            ) : (
-              <div className="flex items-start justify-end gap-0.5">
-                <span
-                  className={`text-[40px] font-semibold leading-none tracking-tight tabular-nums sm:text-[44px] ${
-                    dark ? 'text-white' : 'text-slate-900'
-                  } ${refreshing ? 'opacity-55' : ''}`}
-                >
-                  {temp(t, unit)}
-                </span>
-                <span
-                  className={`mt-1.5 text-base font-medium ${
-                    dark ? 'text-white/35' : 'text-slate-400'
-                  }`}
-                >
-                  °{unit}
-                </span>
-              </div>
-            )}
-            {c?.feels != null && (
-              <p className={`mt-1.5 text-[11px] ${dark ? 'text-white/40' : 'text-slate-500'}`}>
-                Feels like {temp(c.feels, unit)}°
-              </p>
-            )}
+        <div className="flex items-center justify-between gap-2">
+          <div className={`flex min-w-0 items-center gap-1.5 text-[10px] ${mute}`}>
+            <span>WX</span>
+            <span className={dark ? 'text-sky-300/80' : 'text-sky-500'}>
+              <WeatherIcon icon={c?.icon || 'cloud'} size={13} isDay={c?.isDay !== false} />
+            </span>
+            {c?.label && <span className="truncate opacity-90">{c.label}</span>}
           </div>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            title={refreshing ? 'Updating' : 'Refresh'}
+            aria-label={refreshing ? 'Updating' : 'Refresh weather'}
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
+              dark
+                ? 'text-white/35 hover:bg-white/8 hover:text-white/80'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+            }`}
+          >
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={refreshing ? 'animate-spin' : ''}
+              aria-hidden
+            >
+              <path
+                d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M20 4v5h-5M4 20v-5h5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+            {/* Word kept for a11y / screen readers */}
+            <span className="sr-only">{refreshing ? 'Updating' : 'Refresh'}</span>
+          </button>
         </div>
+
+        <p className={`mt-3 text-[10px] ${mute}`}>Now</p>
+
+        {refreshing && !c ? (
+          <div className="skeleton mt-1 h-9 w-20 ml-auto" />
+        ) : (
+          <div className="mt-0.5 flex items-start justify-end gap-0.5">
+            <span
+              className={`text-[36px] font-medium leading-none tracking-tight tabular-nums ${main} ${
+                refreshing ? 'opacity-50' : ''
+              }`}
+            >
+              {temp(t, unit)}
+            </span>
+            <span className={`mt-1 text-sm font-normal ${mute}`}>°{unit}</span>
+          </div>
+        )}
+
+        {c?.feels != null && (
+          <p className={`mt-1 text-right text-[11px] ${mute}`}>
+            Feels like {temp(c.feels, unit)}°
+          </p>
+        )}
 
         {temps.length > 2 && (
           <div
-            className={`mt-3 ml-auto flex h-9 w-[128px] items-end gap-0.5 rounded-lg px-1.5 py-1 ${
-              dark ? 'bg-white/[0.04]' : 'bg-white/50'
-            }`}
+            className="mt-3 flex h-7 w-full items-end gap-px opacity-80"
             title="Next 12 hours"
           >
             {temps.map((v, i) => (
               <div
                 key={i}
-                className={`spark-bar flex-1 ${
-                  dark
-                    ? 'bg-gradient-to-t from-sky-500/30 to-sky-300/80'
-                    : 'bg-gradient-to-t from-sky-600/35 to-sky-500/70'
+                className={`spark-bar flex-1 rounded-sm ${
+                  dark ? 'bg-sky-400/45' : 'bg-sky-500/40'
                 }`}
-                style={{ height: `${20 + ((v - lo) / span) * 72}%` }}
+                style={{ height: `${22 + ((v - lo) / span) * 78}%` }}
               />
             ))}
           </div>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-1.5 text-right sm:mt-4 sm:gap-2">
+        {/* Metrics: label very quiet, value calm — no grid of boxes */}
+        <ul className="mt-3 space-y-1.5 border-t border-white/5 pt-2.5">
           {metrics.map((row) => (
-            <div key={row.label} className="surface-card px-2.5 py-2">
-              <p
-                className={`text-[9px] font-medium uppercase tracking-wide ${
-                  dark ? 'text-white/35' : 'text-slate-400'
-                }`}
-              >
-                {row.label}
-              </p>
-              <p
-                className={`mt-0.5 text-sm font-semibold tabular-nums ${
-                  dark ? 'text-white/90' : 'text-slate-800'
-                }`}
+            <li key={row.label} className="flex items-baseline justify-between gap-2 text-right">
+              <span className={`text-[10px] ${mute}`}>{row.label}</span>
+              <span
+                className={`text-[12px] tabular-nums ${dark ? 'text-white/75' : 'text-slate-700'}`}
               >
                 {row.value}
                 {row.sub ? (
-                  <span className="ml-1 text-[10px] font-normal opacity-50">{row.sub}</span>
+                  <span className={`ml-1 text-[10px] ${mute}`}>{row.sub}</span>
                 ) : null}
-              </p>
-            </div>
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
-
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={refreshing}
-        title="Refresh weather"
-        className={`pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-medium transition ${
-          dark
-            ? 'border-white/10 bg-black/35 text-white/70 hover:bg-white/10 hover:text-white'
-            : 'border-slate-300 bg-white text-slate-600 shadow-sm hover:bg-slate-50'
-        }`}
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          className={refreshing ? 'animate-spin' : ''}
-          aria-hidden
-        >
-          <path
-            d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M20 4v5h-5M4 20v-5h5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-        {refreshing ? 'Updating' : 'Refresh'}
-      </button>
     </div>
   )
 }

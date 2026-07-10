@@ -91,10 +91,10 @@ export default function SettingsModal({
         {/* Header */}
         <div className={`relative flex items-start justify-between border-b px-5 py-4 ${dark ? 'border-white/8' : 'border-slate-100'}`}>
           <div>
-            <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
+            <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
               Preferences
             </p>
-            <h2 className={`mt-0.5 text-lg font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`mt-0.5 text-lg font-medium ${dark ? 'text-white' : 'text-slate-900'}`}>
               Settings
             </h2>
           </div>

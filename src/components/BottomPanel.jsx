@@ -203,7 +203,7 @@ export default function BottomPanel({
                 >
                   <table className="w-full text-left text-xs">
                     <thead
-                      className={`sticky top-0 z-[1] text-[10px] uppercase tracking-wider ${
+                      className={`sticky top-0 z-[1] text-[10px] ${
                         dark ? 'bg-[#0a1220]/95 text-white/35' : 'bg-slate-50 text-slate-400'
                       }`}
                     >
@@ -398,7 +398,7 @@ export default function BottomPanel({
             >
               <div className="flex items-end justify-between">
                 <div>
-                  <p className={`text-[10px] uppercase tracking-wider ${dark ? 'text-white/35' : 'text-slate-400'}`}>
+                  <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
                     Score
                   </p>
                   <p className={`mt-0.5 text-3xl font-semibold tabular-nums ${dark ? 'text-white' : 'text-slate-900'}`}>

@@ -80,16 +80,13 @@ export default function Sidebar({
           </svg>
         </button>
         {expanded && (
-          <div className="ml-2.5 min-w-0">
-            <p
-              className={`truncate text-[12px] font-semibold tracking-wide ${
-                dark ? 'text-white/90' : 'text-slate-800'
-              }`}
-            >
-              Weather
-            </p>
-            <p className={`text-[10px] ${dark ? 'text-white/35' : 'text-slate-400'}`}>Globe</p>
-          </div>
+          <p
+            className={`ml-2.5 truncate text-[12px] font-medium ${
+              dark ? 'text-white/70' : 'text-slate-700'
+            }`}
+          >
+            Weather <span className={dark ? 'text-white/30' : 'text-slate-400'}>Globe</span>
+          </p>
         )}
       </div>
 

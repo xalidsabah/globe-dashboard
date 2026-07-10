@@ -47,10 +47,8 @@ export default function HowItWorksModal({ open, onClose, dark = true }) {
 
         <div className="relative mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-400/90">
-              Weather globe
-            </p>
-            <h2 className={`mt-1 text-xl font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
+            <p className="text-[11px] text-amber-400/80">Weather globe</p>
+            <h2 className={`mt-0.5 text-lg font-medium ${dark ? 'text-white' : 'text-slate-900'}`}>
               How it works
             </h2>
           </div>
