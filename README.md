@@ -20,6 +20,7 @@ Open http://127.0.0.1:5173
 - **°C / °F** toggle
 - **Light / dark** themes (day marble vs night lights globe)
 - Quick-pick major cities + globe markers
+- **Favorites** (star) + **recent** cities — saved in localStorage
 - 3D / 2D camera modes
 
 ## Data

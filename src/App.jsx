@@ -11,6 +11,13 @@ import HowItWorksModal from './components/HowItWorksModal'
 import SearchModal from './components/SearchModal'
 import SettingsModal from './components/SettingsModal'
 import { fetchWeather, fetchCitiesSnapshot, QUICK_CITIES } from './lib/weather'
+import {
+  loadFavorites,
+  toggleFavorite as toggleFavoriteStore,
+  isFavorite as checkFavorite,
+  pushRecent,
+  normalizePlace,
+} from './lib/places'
 
 const DEFAULT_PLACE = {
   id: 'city-New York',
@@ -43,15 +50,15 @@ function savePrefs(partial) {
 }
 
 function toPlace(city) {
-  return {
-    id: city.id || `city-${city.name}`,
-    name: city.name,
-    country: city.country || '',
-    admin1: city.admin1 || '',
-    lat: city.lat,
-    lng: city.lng,
-    timezone: city.timezone || 'auto',
-    label: city.label || `${city.name}, ${city.country || ''}`.trim(),
+  return normalizePlace(city) || {
+    id: city?.id || `city-${city?.name}`,
+    name: city?.name,
+    country: city?.country || '',
+    admin1: city?.admin1 || '',
+    lat: city?.lat,
+    lng: city?.lng,
+    timezone: city?.timezone || 'auto',
+    label: city?.label || `${city?.name || ''}, ${city?.country || ''}`.trim(),
   }
 }
 
@@ -81,12 +88,28 @@ export default function App() {
   const [citySnaps, setCitySnaps] = useState(
     QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` }))
   )
+  const [favorites, setFavorites] = useState(() => loadFavorites())
 
   const showToast = useCallback((msg) => {
     setToast(msg)
     window.clearTimeout(showToast._t)
     showToast._t = window.setTimeout(() => setToast(null), 2400)
   }, [])
+
+  const handleToggleFavorite = useCallback(
+    (target = place) => {
+      if (!target?.lat) return
+      const { list, added } = toggleFavoriteStore(target)
+      setFavorites(list)
+      showToast(added ? `★ ${target.name} saved` : `${target.name} removed from favorites`)
+    },
+    [place, showToast]
+  )
+
+  const placeIsFavorite = useMemo(
+    () => (place ? checkFavorite(place, favorites) : false),
+    [place, favorites]
+  )
 
   const loadWeather = useCallback(
     async (p, { silent } = {}) => {
@@ -185,6 +208,7 @@ export default function App() {
     (p, { openHourly = true, fromSearch = false } = {}) => {
       const placeObj = toPlace(p)
       setPlace(placeObj)
+      pushRecent(placeObj)
       setZoom(1.08)
       setResetToken((n) => n + 1)
       setFullscreen(false)
@@ -365,6 +389,10 @@ export default function App() {
                 setPanelOpen(false)
                 setSearchOpen(true)
               }}
+              isFavorite={placeIsFavorite}
+              onToggleFavorite={() => handleToggleFavorite(place)}
+              favorites={favorites}
+              onSelectFavorite={(f) => selectPlace(f, { openHourly: true })}
               styleLeft={sidebarExpanded ? 'left-[12rem]' : 'left-20'}
             />
             <StatsPanel
@@ -425,6 +453,13 @@ export default function App() {
           onClose={() => setSearchOpen(false)}
           onSelect={(p) => selectPlace(p, { fromSearch: true })}
           dark={dark}
+          favorites={favorites}
+          onFavoritesChange={(list, added) => {
+            setFavorites(list)
+            if (added != null) {
+              showToast(added ? 'Added to favorites' : 'Removed from favorites')
+            }
+          }}
         />
         <SettingsModal
           open={settingsOpen}
