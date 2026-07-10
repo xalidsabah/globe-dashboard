@@ -6,31 +6,66 @@ export const FAVORITES_KEY = 'wg-favorite-cities'
 const MAX_RECENT = 8
 const MAX_FAVORITES = 16
 
+function toNum(n) {
+  const v = Number(n)
+  return Number.isFinite(v) ? v : null
+}
+
 /** Stable key from coordinates so Paris FR ≠ Paris TX */
 export function placeKey(p) {
-  if (!p || p.lat == null || p.lng == null) return p?.id || p?.name || ''
-  return `${Number(p.lat).toFixed(2)},${Number(p.lng).toFixed(2)}`
+  if (!p) return ''
+  const lat = toNum(p.lat)
+  const lng = toNum(p.lng)
+  if (lat == null || lng == null) return String(p.id || p.name || '')
+  return `${lat.toFixed(2)},${lng.toFixed(2)}`
+}
+
+export function samePlace(a, b) {
+  if (!a || !b) return false
+  return placeKey(a) === placeKey(b)
 }
 
 export function normalizePlace(city) {
-  if (!city) return null
+  if (!city?.name) return null
+  const lat = toNum(city.lat)
+  const lng = toNum(city.lng)
+  if (lat == null || lng == null) return null
+
+  const admin1 = city.admin1 || ''
+  const country = city.country || ''
+  const label =
+    city.label ||
+    [city.name, admin1, country].filter(Boolean).join(', ')
+
   return {
-    id: city.id || `city-${city.name}-${placeKey(city)}`,
-    name: city.name,
-    country: city.country || '',
-    admin1: city.admin1 || '',
-    lat: city.lat,
-    lng: city.lng,
+    id: city.id || `city-${city.name}-${lat.toFixed(2)},${lng.toFixed(2)}`,
+    name: String(city.name).trim(),
+    country,
+    admin1,
+    lat,
+    lng,
     timezone: city.timezone || 'auto',
-    label: city.label || [city.name, city.admin1, city.country].filter(Boolean).join(', '),
+    label,
   }
+}
+
+function dedupeByKey(list) {
+  const seen = new Set()
+  const out = []
+  for (const item of list) {
+    const k = placeKey(item)
+    if (!k || seen.has(k)) continue
+    seen.add(k)
+    out.push(item)
+  }
+  return out
 }
 
 function readList(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key) || '[]')
     if (!Array.isArray(raw)) return []
-    return raw.map(normalizePlace).filter((p) => p?.name && p.lat != null)
+    return dedupeByKey(raw.map(normalizePlace).filter(Boolean))
   } catch {
     return []
   }
@@ -77,18 +112,15 @@ export function isFavorite(place, favorites = null) {
 export function toggleFavorite(place) {
   const p = normalizePlace(place)
   if (!p) return { list: loadFavorites(), added: false }
+
   const key = placeKey(p)
   const prev = loadFavorites()
   const exists = prev.some((f) => placeKey(f) === key)
-  let next
-  let added
-  if (exists) {
-    next = prev.filter((f) => placeKey(f) !== key)
-    added = false
-  } else {
-    next = [p, ...prev.filter((f) => placeKey(f) !== key)].slice(0, MAX_FAVORITES)
-    added = true
-  }
+
+  const next = exists
+    ? prev.filter((f) => placeKey(f) !== key)
+    : [p, ...prev.filter((f) => placeKey(f) !== key)].slice(0, MAX_FAVORITES)
+
   writeList(FAVORITES_KEY, next)
-  return { list: next, added }
+  return { list: next, added: !exists }
 }

@@ -50,16 +50,7 @@ function savePrefs(partial) {
 }
 
 function toPlace(city) {
-  return normalizePlace(city) || {
-    id: city?.id || `city-${city?.name}`,
-    name: city?.name,
-    country: city?.country || '',
-    admin1: city?.admin1 || '',
-    lat: city?.lat,
-    lng: city?.lng,
-    timezone: city?.timezone || 'auto',
-    label: city?.label || `${city?.name || ''}, ${city?.country || ''}`.trim(),
-  }
+  return normalizePlace(city) || DEFAULT_PLACE
 }
 
 export default function App() {
@@ -98,10 +89,11 @@ export default function App() {
 
   const handleToggleFavorite = useCallback(
     (target = place) => {
-      if (!target?.lat) return
+      if (!target?.lat && !target?.name) return
       const { list, added } = toggleFavoriteStore(target)
       setFavorites(list)
-      showToast(added ? `★ ${target.name} saved` : `${target.name} removed from favorites`)
+      const name = target?.name || 'City'
+      showToast(added ? `★ ${name} saved` : `${name} removed`)
     },
     [place, showToast]
   )
@@ -456,9 +448,8 @@ export default function App() {
           favorites={favorites}
           onFavoritesChange={(list, added) => {
             setFavorites(list)
-            if (added != null) {
-              showToast(added ? 'Added to favorites' : 'Removed from favorites')
-            }
+            if (added === true) showToast('★ Added to favorites')
+            else if (added === false) showToast('Removed from favorites')
           }}
         />
         <SettingsModal

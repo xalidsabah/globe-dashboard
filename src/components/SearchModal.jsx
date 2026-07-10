@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { searchPlaces, QUICK_CITIES } from '../lib/weather'
 import {
   loadRecent,
@@ -10,29 +10,39 @@ import {
   placeKey,
   normalizePlace,
 } from '../lib/places'
+import StarButton, { StarIcon } from './StarButton'
 
 const POPULAR = QUICK_CITIES.slice(0, 12)
 
-function toItem(c, group) {
-  return { ...normalizePlace(c), group }
+const GROUP_LABEL = {
+  favorite: 'Favorites',
+  recent: 'Recent',
+  popular: 'Popular cities',
+  result: null,
 }
 
-function StarIcon({ filled, className = '' }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      className={className}
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M12 3.2 14.6 9l6.2.5-4.7 4 1.4 6.1L12 16.5 6.5 19.6l1.4-6.1-4.7-4L9.4 9 12 3.2z" />
-    </svg>
-  )
+function toItem(c, group) {
+  const place = normalizePlace(c)
+  if (!place) return null
+  return { ...place, group }
+}
+
+function avatarTone(group, dark) {
+  if (group === 'favorite') {
+    return dark ? 'bg-amber-400/15 text-amber-300' : 'bg-amber-50 text-amber-600'
+  }
+  if (group === 'recent') {
+    return dark ? 'bg-white/6 text-white/45' : 'bg-slate-100 text-slate-400'
+  }
+  return dark
+    ? 'bg-gradient-to-br from-sky-500/25 to-indigo-500/20 text-sky-200'
+    : 'bg-gradient-to-br from-sky-100 to-indigo-50 text-sky-700'
+}
+
+function avatarGlyph(r) {
+  if (r.group === 'favorite') return '★'
+  if (r.group === 'recent') return '⏱'
+  return (r.name || '?')[0]
 }
 
 export default function SearchModal({
@@ -43,73 +53,105 @@ export default function SearchModal({
   favorites: favoritesProp,
   onFavoritesChange,
 }) {
+  const listId = useId()
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [recent, setRecent] = useState([])
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState(() => favoritesProp ?? loadFavorites())
   const [activeIdx, setActiveIdx] = useState(0)
   const inputRef = useRef(null)
+  const listRef = useRef(null)
+  const activeRef = useRef(null)
 
-  useEffect(() => {
-    if (!open) {
-      setQ('')
-      setResults([])
-      setActiveIdx(0)
-      return
-    }
-    setRecent(loadRecent())
-    setFavorites(favoritesProp ?? loadFavorites())
-    setTimeout(() => inputRef.current?.focus(), 40)
-  }, [open, favoritesProp])
-
+  // Sync favorites from parent when provided
   useEffect(() => {
     if (favoritesProp) setFavorites(favoritesProp)
   }, [favoritesProp])
 
+  // Reset / hydrate when modal opens
+  useEffect(() => {
+    if (!open) {
+      setQ('')
+      setResults([])
+      setError(null)
+      setActiveIdx(0)
+      setLoading(false)
+      return
+    }
+    setRecent(loadRecent())
+    setFavorites(favoritesProp ?? loadFavorites())
+    const t = window.setTimeout(() => inputRef.current?.focus(), 40)
+    return () => window.clearTimeout(t)
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps -- only rehydrate on open
+
+  // Debounced geocode search
   useEffect(() => {
     if (!open || q.trim().length < 2) {
       setResults([])
       setLoading(false)
+      setError(null)
       return
     }
     let cancelled = false
     setLoading(true)
-    const t = setTimeout(async () => {
+    setError(null)
+    const t = window.setTimeout(async () => {
       try {
         const list = await searchPlaces(q, 8)
-        if (!cancelled) {
-          setResults(list.map((r) => toItem(r, 'result')))
-          setActiveIdx(0)
-        }
+        if (cancelled) return
+        setResults(list.map((r) => toItem(r, 'result')).filter(Boolean))
+        setActiveIdx(0)
       } catch {
-        if (!cancelled) setResults([])
+        if (cancelled) return
+        setResults([])
+        setError('Search failed — check your connection')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }, 260)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      window.clearTimeout(t)
     }
   }, [q, open])
 
+  const searching = q.trim().length >= 2
+
   const flatList = useMemo(() => {
-    if (q.trim().length >= 2) return results
-    const fav = favorites.map((r) => toItem(r, 'favorite'))
+    if (searching) return results
+
+    const fav = favorites.map((r) => toItem(r, 'favorite')).filter(Boolean)
     const favKeys = new Set(fav.map((f) => placeKey(f)))
     const rec = recent
       .filter((r) => !favKeys.has(placeKey(r)))
       .map((r) => toItem(r, 'recent'))
+      .filter(Boolean)
     const used = new Set([...favKeys, ...rec.map((r) => placeKey(r))])
-    const pop = POPULAR.filter((p) => !used.has(placeKey(p))).map((c) => toItem(c, 'popular'))
+    const pop = POPULAR.filter((p) => !used.has(placeKey(p)))
+      .map((c) => toItem(c, 'popular'))
+      .filter(Boolean)
     return [...fav, ...rec, ...pop]
-  }, [q, results, recent, favorites])
+  }, [searching, results, recent, favorites])
+
+  // Keep keyboard highlight in view
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [activeIdx, flatList.length])
+
+  // Clamp active index when list shrinks
+  useEffect(() => {
+    if (activeIdx >= flatList.length) {
+      setActiveIdx(Math.max(0, flatList.length - 1))
+    }
+  }, [flatList.length, activeIdx])
 
   if (!open) return null
 
   const pick = (p) => {
     const place = normalizePlace(p)
+    if (!place) return
     setRecent(pushRecent(place))
     onSelect?.(place)
     onClose?.()
@@ -132,34 +174,44 @@ export default function SearchModal({
     if (e.key === 'Escape') {
       e.preventDefault()
       onClose?.()
-    } else if (e.key === 'ArrowDown') {
+      return
+    }
+    if (!flatList.length) return
+
+    if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIdx((i) => Math.min(Math.max(0, flatList.length - 1), i + 1))
+      setActiveIdx((i) => Math.min(flatList.length - 1, i + 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIdx((i) => Math.max(0, i - 1))
     } else if (e.key === 'Enter' && flatList[activeIdx]) {
       e.preventDefault()
       pick(flatList[activeIdx])
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      setActiveIdx(0)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      setActiveIdx(flatList.length - 1)
     }
   }
 
-  const groupLabel = (group) => {
-    if (group === 'favorite') return 'Favorites'
-    if (group === 'recent') return 'Recent'
-    if (group === 'popular') return 'Popular cities'
-    return null
-  }
-
   let lastGroup = null
+  const emptySearch = searching && !loading && !error && results.length === 0
+  const showHint = !searching && favorites.length === 0 && recent.length === 0
 
   return (
-    <div className="absolute inset-0 z-[80] flex items-start justify-center px-4 pt-[8vh] sm:pt-[12vh]">
+    <div
+      className="absolute inset-0 z-[80] flex items-start justify-center px-4 pt-[8vh] sm:pt-[12vh]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search cities"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-        aria-label="Close"
+        aria-label="Close search"
       />
 
       <div
@@ -175,14 +227,16 @@ export default function SearchModal({
         />
 
         <div
-          className={`relative flex items-center gap-3 border-b px-5 py-4 ${dark ? 'border-white/8' : 'border-slate-100'}`}
+          className={`relative flex items-center gap-3 border-b px-5 py-4 ${
+            dark ? 'border-white/8' : 'border-slate-100'
+          }`}
         >
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
               dark ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-50 text-sky-600'
             }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
               <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
@@ -201,13 +255,28 @@ export default function SearchModal({
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Tokyo, Paris, Los Angeles…"
+              autoComplete="off"
+              spellCheck={false}
+              role="combobox"
+              aria-expanded={true}
+              aria-controls={listId}
+              aria-activedescendant={
+                flatList[activeIdx] ? `${listId}-opt-${activeIdx}` : undefined
+              }
+              aria-autocomplete="list"
               className={`mt-0.5 w-full bg-transparent text-[16px] font-medium outline-none ${
-                dark ? 'text-white placeholder:text-white/25' : 'text-slate-900 placeholder:text-slate-400'
+                dark
+                  ? 'text-white placeholder:text-white/25'
+                  : 'text-slate-900 placeholder:text-slate-400'
               }`}
             />
           </div>
           {loading && (
-            <span className={`text-[11px] font-medium ${dark ? 'text-sky-300' : 'text-sky-600'}`}>
+            <span
+              className={`animate-pulse text-[11px] font-medium ${
+                dark ? 'text-sky-300' : 'text-sky-600'
+              }`}
+            >
               Searching
             </span>
           )}
@@ -219,38 +288,55 @@ export default function SearchModal({
                 ? 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        <div className="relative max-h-[min(56vh,420px)] overflow-y-auto panel-scroll py-2">
-          {q.trim().length >= 2 && !loading && results.length === 0 && (
+        <div
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          aria-label="Cities"
+          className="relative max-h-[min(56vh,420px)] overflow-y-auto panel-scroll py-2"
+        >
+          {error && (
+            <div className={`px-6 py-10 text-center ${dark ? 'text-rose-300/80' : 'text-rose-600'}`}>
+              <p className="text-sm font-medium">{error}</p>
+              <p className={`mt-1 text-[12px] ${dark ? 'text-white/40' : 'text-slate-500'}`}>
+                Try again in a moment
+              </p>
+            </div>
+          )}
+
+          {emptySearch && (
             <div className={`px-6 py-12 text-center ${dark ? 'text-white/40' : 'text-slate-500'}`}>
               <p className="text-sm font-medium">No places found</p>
               <p className="mt-1 text-[12px]">Try another spelling or a nearby city</p>
             </div>
           )}
 
-          {q.trim().length < 2 && favorites.length === 0 && recent.length === 0 && (
+          {showHint && !error && (
             <p
               className={`px-5 pb-1 pt-2 text-[11px] leading-relaxed ${
                 dark ? 'text-white/35' : 'text-slate-500'
               }`}
             >
-              Star cities to pin favorites. Recent searches appear here automatically.
+              Star cities to pin favorites. Recent picks appear here automatically.
             </p>
           )}
 
           {flatList.map((r, i) => {
-            const showHead = r.group !== lastGroup && q.trim().length < 2
+            const showHead = !searching && r.group !== lastGroup
             lastGroup = r.group
             const active = activeIdx === i
             const fav = isFavorite(r, favorites)
-            const label = groupLabel(r.group)
+            const label = GROUP_LABEL[r.group]
+            const optId = `${listId}-opt-${i}`
 
             return (
-              <div key={`${r.group}-${placeKey(r) || r.name}`}>
+              <div key={`${r.group}-${placeKey(r)}`}>
                 {showHead && label && (
                   <div className="flex items-center justify-between px-5 pb-1.5 pt-3">
                     <p
@@ -259,13 +345,18 @@ export default function SearchModal({
                       }`}
                     >
                       {label}
+                      {r.group === 'favorite' && favorites.length > 0 && (
+                        <span className="ml-1.5 font-normal opacity-70">{favorites.length}</span>
+                      )}
                     </p>
                     {r.group === 'recent' && recent.length > 0 && (
                       <button
                         type="button"
                         onClick={onClearRecent}
                         className={`text-[10px] font-medium ${
-                          dark ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'
+                          dark
+                            ? 'text-white/30 hover:text-white/60'
+                            : 'text-slate-400 hover:text-slate-600'
                         }`}
                       >
                         Clear
@@ -274,8 +365,10 @@ export default function SearchModal({
                   </div>
                 )}
                 <div
-                  role="button"
-                  tabIndex={0}
+                  id={optId}
+                  role="option"
+                  aria-selected={active}
+                  ref={active ? activeRef : null}
                   className={`mx-2 flex w-[calc(100%-1rem)] items-center gap-2 rounded-2xl px-2 py-1.5 text-left transition ${
                     active
                       ? dark
@@ -285,68 +378,52 @@ export default function SearchModal({
                         ? 'hover:bg-white/5'
                         : 'hover:bg-slate-50'
                   }`}
-                  onClick={() => pick(r)}
                   onMouseEnter={() => setActiveIdx(i)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      pick(r)
-                    }
-                  }}
                 >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${
-                      r.group === 'favorite'
-                        ? dark
-                          ? 'bg-amber-400/15 text-amber-300'
-                          : 'bg-amber-50 text-amber-600'
-                        : r.group === 'recent'
-                          ? dark
-                            ? 'bg-white/6 text-white/45'
-                            : 'bg-slate-100 text-slate-400'
-                          : dark
-                            ? 'bg-gradient-to-br from-sky-500/25 to-indigo-500/20 text-sky-200'
-                            : 'bg-gradient-to-br from-sky-100 to-indigo-50 text-sky-700'
-                    }`}
-                  >
-                    {r.group === 'favorite' ? '★' : r.group === 'recent' ? '⏱' : (r.name || '?')[0]}
-                  </span>
-                  <span className="min-w-0 flex-1 py-1">
-                    <span
-                      className={`block truncate text-[14px] font-medium ${
-                        dark ? 'text-white' : 'text-slate-900'
-                      }`}
-                    >
-                      {r.name}
-                    </span>
-                    <span
-                      className={`block truncate text-[12px] ${dark ? 'text-white/40' : 'text-slate-500'}`}
-                    >
-                      {[r.admin1, r.country].filter(Boolean).join(' · ') || r.label}
-                    </span>
-                  </span>
-                  {active && q.trim().length >= 2 && (
-                    <span className={`text-[10px] font-medium ${dark ? 'text-sky-300' : 'text-sky-600'}`}>
-                      Enter ↵
-                    </span>
-                  )}
                   <button
                     type="button"
-                    title={fav ? 'Remove favorite' : 'Add favorite'}
-                    aria-label={fav ? 'Remove favorite' : 'Add favorite'}
-                    onClick={(e) => onToggleStar(e, r)}
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${
-                      fav
-                        ? dark
-                          ? 'text-amber-300 hover:bg-amber-400/10'
-                          : 'text-amber-500 hover:bg-amber-50'
-                        : dark
-                          ? 'text-white/25 hover:bg-white/5 hover:text-amber-300'
-                          : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500'
-                    }`}
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-0.5 text-left"
+                    onClick={() => pick(r)}
                   >
-                    <StarIcon filled={fav} />
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${avatarTone(
+                        r.group,
+                        dark
+                      )}`}
+                    >
+                      {avatarGlyph(r)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`block truncate text-[14px] font-medium ${
+                          dark ? 'text-white' : 'text-slate-900'
+                        }`}
+                      >
+                        {r.name}
+                      </span>
+                      <span
+                        className={`block truncate text-[12px] ${
+                          dark ? 'text-white/40' : 'text-slate-500'
+                        }`}
+                      >
+                        {[r.admin1, r.country].filter(Boolean).join(' · ') || r.label}
+                      </span>
+                    </span>
+                    {active && (
+                      <span
+                        className={`hidden text-[10px] font-medium sm:inline ${
+                          dark ? 'text-sky-300' : 'text-sky-600'
+                        }`}
+                      >
+                        Enter ↵
+                      </span>
+                    )}
                   </button>
+                  <StarButton
+                    filled={fav}
+                    dark={dark}
+                    onClick={(e) => onToggleStar(e, r)}
+                  />
                 </div>
               </div>
             )
@@ -358,13 +435,13 @@ export default function SearchModal({
             dark ? 'border-white/6 text-white/28' : 'border-slate-100 text-slate-400'
           }`}
         >
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center gap-1.5">
             <kbd className="kbd">↑↓</kbd> move
             <kbd className="kbd">↵</kbd> open
             <kbd className="kbd">esc</kbd> close
           </span>
-          <span className="flex items-center gap-1">
-            <StarIcon filled className="opacity-60" /> favorites saved locally
+          <span className="flex items-center gap-1 opacity-80">
+            <StarIcon filled size={12} /> saved on this device
           </span>
         </div>
       </div>
