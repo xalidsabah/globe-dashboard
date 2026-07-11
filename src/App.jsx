@@ -376,13 +376,16 @@ export default function App() {
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords
         try {
-          // Label with the resolved place name (city / area), not a generic "Your location"
           const found = await reverseGeocode(lat, lng)
-          const placeName = found.name || t('yourLocation')
+          // Always prefer a real place name from reverse geocode
+          const placeName =
+            (found.name && String(found.name).trim()) ||
+            (found.admin1 && String(found.admin1).trim()) ||
+            (found.country && String(found.country).trim()) ||
+            `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`
           const placeLabel =
-            found.label ||
-            [found.name, found.admin1, found.country].filter(Boolean).join(', ') ||
-            placeName
+            (found.label && String(found.label).trim()) ||
+            [placeName, found.admin1, found.country].filter(Boolean).join(', ')
           selectPlace(
             {
               ...found,
@@ -397,16 +400,18 @@ export default function App() {
           showToast(t('toast_nearYou', { name: placeName }))
         } catch (e) {
           console.error(e)
+          // Still fly to coords; name from coords so we never stick on "Your location"
+          const coordName = `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`
           selectPlace(
             {
               id: `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
-              name: t('yourLocation'),
+              name: coordName,
               country: '',
               admin1: '',
               lat,
               lng,
               timezone: 'auto',
-              label: t('yourLocation'),
+              label: coordName,
             },
             { openHourly: true, fromSearch: true }
           )
@@ -419,7 +424,7 @@ export default function App() {
         setLocating(false)
         showToast(err?.code === 1 ? t('toast_locDenied') : t('toast_locFail'))
       },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     )
   }, [selectPlace, showToast, t])
 

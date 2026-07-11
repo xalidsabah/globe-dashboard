@@ -326,14 +326,25 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef, emphasized }) {
   )
 }
 
-/** Rotate globe group so lat/lng faces the camera (+Z) */
-function faceLatLng(group, lat, lng) {
-  // lat0/lng0 is already on +Z in three-globe space.
-  // Rotate Y by -lng, then X by +lat to bring target to +Z.
-  group.rotation.order = 'YXZ'
-  group.rotation.y = -lng * DEG2RAD
-  group.rotation.x = lat * DEG2RAD
-  group.rotation.z = 0
+/** Target rotation so lat/lng faces the camera (+Z) — three-globe space */
+function faceTarget(lat, lng) {
+  return {
+    y: -lng * DEG2RAD,
+    x: lat * DEG2RAD,
+  }
+}
+
+/** Shortest-path angle delta (signed) */
+function angleDelta(a, b) {
+  let diff = b - a
+  while (diff > Math.PI) diff -= Math.PI * 2
+  while (diff < -Math.PI) diff += Math.PI * 2
+  return diff
+}
+
+/** Shortest-path angle blend */
+function lerpAngle(a, b, t) {
+  return a + angleDelta(a, b) * t
 }
 
 export default function Globe({
@@ -357,6 +368,11 @@ export default function Globe({
   const baseDist = useRef(280)
   const [lod, setLod] = useState('far')
   const lodRef = useRef('far')
+  // Smooth fly-to targets (rotation + distance)
+  const targetRot = useRef(faceTarget(20, -40))
+  const flyActive = useRef(false)
+  const flyStrength = useRef(0.055)
+  const initialized = useRef(false)
 
   // far = whole planet, mid = multi-country, near = one country (show its capital)
   const distToLod = (d) => {
@@ -367,38 +383,70 @@ export default function Globe({
 
   useEffect(() => {
     targetZoom.current = zoom
+    // Zoom button / focus zoom also eases in useFrame
+    flyActive.current = true
   }, [zoom])
 
   useEffect(() => {
     if (!groupRef.current) return
 
-    if (focus?.lat != null && focus?.lng != null) {
-      faceLatLng(groupRef.current, focus.lat, focus.lng)
-    } else {
-      // Nice default: Americas / Atlantic
-      faceLatLng(groupRef.current, 20, -40)
+    const lat = focus?.lat != null ? focus.lat : 20
+    const lng = focus?.lng != null ? focus.lng : -40
+    targetRot.current = faceTarget(lat, lng)
+
+    // First mount: place camera at a sensible start without a long empty fly
+    if (!initialized.current) {
+      const g = groupRef.current
+      g.rotation.order = 'YXZ'
+      g.rotation.y = targetRot.current.y
+      g.rotation.x = targetRot.current.x
+      g.rotation.z = 0
+      const dist = baseDist.current / Math.max(0.4, targetZoom.current || 1)
+      if (mode === '2d') {
+        camera.position.set(0, dist * 0.98, dist * 0.12)
+      } else {
+        camera.position.set(0, dist * 0.12, dist)
+      }
+      camera.lookAt(0, 0, 0)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0)
+        controlsRef.current.update()
+      }
+      initialized.current = true
+      flyActive.current = false
+      const next = distToLod(dist)
+      lodRef.current = next
+      setLod(next)
+      return
     }
 
-    const dist = baseDist.current / (targetZoom.current || 1)
-    if (mode === '2d') {
-      camera.position.set(0, dist * 0.98, dist * 0.12)
-    } else {
-      camera.position.set(0, dist * 0.12, dist)
-    }
-    camera.lookAt(0, 0, 0)
-    if (controlsRef.current) {
-      controlsRef.current.target.set(0, 0, 0)
-      controlsRef.current.update()
-    }
-    const next = distToLod(dist)
-    lodRef.current = next
-    setLod(next)
+    // Subsequent focus / reset: smooth fly-to
+    flyActive.current = true
+    // Slightly snappier for long jumps, softer for nearby
+    flyStrength.current = 0.048
   }, [resetToken, mode, camera, focus?.lat, focus?.lng])
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const controls = controlsRef.current
+    const g = groupRef.current
+    // Frame-rate independent ease (slower / smoother while flying to a place)
+    const t = 1 - Math.exp(-(flyActive.current ? 2.4 : 4.5) * Math.min(delta, 0.05))
+
+    let angErr = 0
+    if (g) {
+      g.rotation.order = 'YXZ'
+      const tx = targetRot.current.x
+      const ty = targetRot.current.y
+      g.rotation.x = lerpAngle(g.rotation.x, tx, t)
+      g.rotation.y = lerpAngle(g.rotation.y, ty, t)
+      g.rotation.z = THREE.MathUtils.lerp(g.rotation.z, 0, t)
+      angErr =
+        Math.abs(angleDelta(g.rotation.x, tx)) + Math.abs(angleDelta(g.rotation.y, ty))
+    }
+
     if (controls) {
-      controls.autoRotate = Boolean(autoRotate && mode === '3d')
+      // Pause spin while flying so the ease reads cleanly
+      controls.autoRotate = Boolean(autoRotate && mode === '3d' && !flyActive.current)
       controls.autoRotateSpeed = 0.18
       if (mode === '2d') {
         controls.minPolarAngle = Math.PI / 2 - 0.05
@@ -411,16 +459,27 @@ export default function Globe({
 
     const desired = baseDist.current / Math.max(0.4, targetZoom.current)
     const current = camera.position.length()
+    let distErr = 0
     if (Number.isFinite(current) && current > 10) {
-      const diff = Math.abs(current - desired)
-      if (diff > 1.5) {
-        camera.position.setLength(THREE.MathUtils.lerp(current, desired, 0.1))
+      distErr = Math.abs(current - desired)
+      if (distErr > 0.35) {
+        camera.position.setLength(THREE.MathUtils.lerp(current, desired, t * 0.92))
       }
-      const next = distToLod(current)
+      const next = distToLod(camera.position.length())
       if (next !== lodRef.current) {
         lodRef.current = next
         setLod(next)
       }
+    }
+
+    if (flyActive.current && angErr < 0.012 && distErr < 0.8) {
+      flyActive.current = false
+    }
+
+    camera.lookAt(0, 0, 0)
+    if (controls) {
+      controls.target.set(0, 0, 0)
+      if (!flyActive.current) controls.update()
     }
   })
 

@@ -107,40 +107,142 @@ export async function searchPlaces(query, count = 6) {
   }))
 }
 
-/** Reverse geocode lat/lng → place (Open-Meteo) */
+/**
+ * Reverse geocode lat/lng → place name.
+ * Open-Meteo reverse is unreliable (often 404), so we use BigDataCloud first,
+ * then Nominatim, then a last-ditch Open-Meteo attempt.
+ */
 export async function reverseGeocode(lat, lng) {
-  const url = new URL('https://geocoding-api.open-meteo.com/v1/reverse')
-  url.searchParams.set('latitude', String(lat))
-  url.searchParams.set('longitude', String(lng))
-  url.searchParams.set('language', 'en')
-  url.searchParams.set('format', 'json')
-  url.searchParams.set('count', '1')
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Reverse geocoding failed')
-  const data = await res.json()
-  const r = data.results?.[0]
-  if (!r) {
-    return {
-      id: `geo-${lat.toFixed(2)},${lng.toFixed(2)}`,
-      name: 'Your location',
-      admin1: '',
-      country: '',
-      lat,
-      lng,
-      timezone: 'auto',
-      label: `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`,
-    }
+  const fallback = {
+    id: `geo-${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`,
+    name: null,
+    admin1: '',
+    country: '',
+    countryCode: '',
+    lat: Number(lat),
+    lng: Number(lng),
+    timezone: 'auto',
+    label: `${Number(lat).toFixed(2)}°, ${Number(lng).toFixed(2)}°`,
   }
+
+  // 1) BigDataCloud — free client endpoint, solid city/locality names
+  try {
+    const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client')
+    url.searchParams.set('latitude', String(lat))
+    url.searchParams.set('longitude', String(lng))
+    url.searchParams.set('localityLanguage', 'en')
+    const res = await fetch(url)
+    if (res.ok) {
+      const d = await res.json()
+      const name =
+        d.city ||
+        d.locality ||
+        d.principalSubdivision ||
+        d.localityInfo?.administrative?.find((a) => a.adminLevel >= 5)?.name ||
+        null
+      if (name) {
+        const admin1 = d.principalSubdivision || ''
+        let country = d.countryName || ''
+        // Clean "United States of America (the)" style labels
+        country = country.replace(/\s*\(the\)\s*$/i, '').trim()
+        const tzHint = d.localityInfo?.informative?.find((x) =>
+          String(x.description || '').toLowerCase().includes('time zone')
+        )?.name
+        return {
+          id: `geo-${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`,
+          name: String(name).trim(),
+          admin1,
+          country,
+          countryCode: d.countryCode || '',
+          lat: Number(lat),
+          lng: Number(lng),
+          timezone: tzHint || 'auto',
+          label: [name, admin1, country].filter(Boolean).join(', '),
+        }
+      }
+    }
+  } catch {
+    /* try next */
+  }
+
+  // 2) OpenStreetMap Nominatim
+  try {
+    const url = new URL('https://nominatim.openstreetmap.org/reverse')
+    url.searchParams.set('lat', String(lat))
+    url.searchParams.set('lon', String(lng))
+    url.searchParams.set('format', 'jsonv2')
+    url.searchParams.set('addressdetails', '1')
+    url.searchParams.set('zoom', '12')
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+    })
+    if (res.ok) {
+      const d = await res.json()
+      const a = d.address || {}
+      const name =
+        a.city ||
+        a.town ||
+        a.village ||
+        a.municipality ||
+        a.county ||
+        a.state ||
+        d.name ||
+        null
+      if (name) {
+        const admin1 = a.state || a.region || ''
+        const country = a.country || ''
+        return {
+          id: `geo-${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`,
+          name: String(name).trim(),
+          admin1,
+          country,
+          countryCode: (a.country_code || '').toUpperCase(),
+          lat: Number(lat),
+          lng: Number(lng),
+          timezone: 'auto',
+          label: [name, admin1, country].filter(Boolean).join(', '),
+        }
+      }
+    }
+  } catch {
+    /* try next */
+  }
+
+  // 3) Open-Meteo (may 404 — kept as last attempt)
+  try {
+    const url = new URL('https://geocoding-api.open-meteo.com/v1/reverse')
+    url.searchParams.set('latitude', String(lat))
+    url.searchParams.set('longitude', String(lng))
+    url.searchParams.set('language', 'en')
+    url.searchParams.set('format', 'json')
+    url.searchParams.set('count', '1')
+    const res = await fetch(url)
+    if (res.ok) {
+      const data = await res.json()
+      const r = data.results?.[0]
+      if (r?.name) {
+        return {
+          id: `${r.id ?? r.latitude}-${r.longitude}`,
+          name: r.name,
+          admin1: r.admin1 || '',
+          country: r.country || '',
+          countryCode: r.country_code || '',
+          lat: r.latitude ?? Number(lat),
+          lng: r.longitude ?? Number(lng),
+          timezone: r.timezone || 'auto',
+          label: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
+        }
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+
+  // Absolute last resort — coordinates as label, never a fake "Your location" name
   return {
-    id: `${r.id ?? r.latitude}-${r.longitude}`,
-    name: r.name || 'Your location',
-    admin1: r.admin1 || '',
-    country: r.country || '',
-    countryCode: r.country_code || '',
-    lat: r.latitude ?? lat,
-    lng: r.longitude ?? lng,
-    timezone: r.timezone || 'auto',
-    label: [r.name, r.admin1, r.country].filter(Boolean).join(', ') || 'Your location',
+    ...fallback,
+    name: `${Number(lat).toFixed(2)}°, ${Number(lng).toFixed(2)}°`,
+    label: fallback.label,
   }
 }
 
