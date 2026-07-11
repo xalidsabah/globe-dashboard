@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react'
 import Sidebar from './components/Sidebar'
 import GlobeFallback from './components/GlobeFallback'
-
-const GlobeScene = lazy(() => import('./components/GlobeScene'))
 import TopBar from './components/TopBar'
 import LeftPromo from './components/LeftPromo'
 import StatsPanel from './components/StatsPanel'
 import BottomControls from './components/BottomControls'
 import BottomPanel from './components/BottomPanel'
-import HowItWorksModal from './components/HowItWorksModal'
-import SearchModal from './components/SearchModal'
-import SettingsModal from './components/SettingsModal'
 import { fetchWeather, fetchCitiesSnapshot, QUICK_CITIES } from './lib/weather'
 import {
   loadFavorites,
@@ -19,6 +14,12 @@ import {
   pushRecent,
   normalizePlace,
 } from './lib/places'
+
+const loadGlobeScene = () => import('./components/GlobeScene')
+const GlobeScene = lazy(loadGlobeScene)
+const SearchModal = lazy(() => import('./components/SearchModal'))
+const SettingsModal = lazy(() => import('./components/SettingsModal'))
+const HowItWorksModal = lazy(() => import('./components/HowItWorksModal'))
 
 const DEFAULT_PLACE = {
   id: 'city-New York',
@@ -81,11 +82,25 @@ export default function App() {
     QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` }))
   )
   const [favorites, setFavorites] = useState(() => loadFavorites())
+  const [weatherError, setWeatherError] = useState(false)
 
   const showToast = useCallback((msg) => {
     setToast(msg)
     window.clearTimeout(showToast._t)
     showToast._t = window.setTimeout(() => setToast(null), 2400)
+  }, [])
+
+  // Warm the 3D chunk after first paint so open feels instant
+  useEffect(() => {
+    const warm = () => {
+      loadGlobeScene().catch(() => {})
+    }
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 2200 })
+      return () => window.cancelIdleCallback?.(id)
+    }
+    const t = window.setTimeout(warm, 900)
+    return () => window.clearTimeout(t)
   }, [])
 
   const handleToggleFavorite = useCallback(
@@ -108,10 +123,12 @@ export default function App() {
     async (p, { silent } = {}) => {
       if (!p?.lat) return
       setLoading(true)
+      setWeatherError(false)
       const t0 = performance.now()
       try {
         const data = await fetchWeather(p.lat, p.lng, p.timezone || 'auto')
         setWeather(data)
+        setWeatherError(false)
         setLiveMs(Math.round(performance.now() - t0))
         setCitySnaps((prev) =>
           prev.map((c) =>
@@ -126,7 +143,8 @@ export default function App() {
         }
       } catch (e) {
         console.error(e)
-        showToast('Could not load weather')
+        setWeatherError(true)
+        if (!silent) showToast('Could not load weather')
       } finally {
         setLoading(false)
       }
@@ -398,6 +416,7 @@ export default function App() {
               unit={unit}
               dark={dark}
               refreshing={loading}
+              error={weatherError}
               onRefresh={() => loadWeather(place)}
               hourly={weather?.hourly || []}
             />
@@ -445,40 +464,48 @@ export default function App() {
           loading={loading}
         />
 
-        <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} dark={dark} />
-        <SearchModal
-          open={searchOpen}
-          onClose={() => setSearchOpen(false)}
-          onSelect={(p) => selectPlace(p, { fromSearch: true })}
-          dark={dark}
-          favorites={favorites}
-          onFavoritesChange={(list, added) => {
-            setFavorites(list)
-            if (added === true) showToast('★ Added to favorites')
-            else if (added === false) showToast('Removed from favorites')
-          }}
-        />
-        <SettingsModal
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          dark={dark}
-          unit={unit}
-          onToggleUnit={() => setUnitPersist(unit === 'C' ? 'F' : 'C')}
-          autoRotate={autoRotate}
-          onToggleAutoRotate={() => {
-            setAutoRotate((v) => {
-              savePrefs({ autoRotate: !v })
-              return !v
-            })
-          }}
-          autoRefresh={autoRefresh}
-          onToggleAutoRefresh={() => {
-            setAutoRefresh((v) => {
-              savePrefs({ autoRefresh: !v })
-              return !v
-            })
-          }}
-        />
+        <Suspense fallback={null}>
+          {howOpen && (
+            <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} dark={dark} />
+          )}
+          {searchOpen && (
+            <SearchModal
+              open={searchOpen}
+              onClose={() => setSearchOpen(false)}
+              onSelect={(p) => selectPlace(p, { fromSearch: true })}
+              dark={dark}
+              favorites={favorites}
+              onFavoritesChange={(list, added) => {
+                setFavorites(list)
+                if (added === true) showToast('★ Added to favorites')
+                else if (added === false) showToast('Removed from favorites')
+              }}
+            />
+          )}
+          {settingsOpen && (
+            <SettingsModal
+              open={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+              dark={dark}
+              unit={unit}
+              onToggleUnit={() => setUnitPersist(unit === 'C' ? 'F' : 'C')}
+              autoRotate={autoRotate}
+              onToggleAutoRotate={() => {
+                setAutoRotate((v) => {
+                  savePrefs({ autoRotate: !v })
+                  return !v
+                })
+              }}
+              autoRefresh={autoRefresh}
+              onToggleAutoRefresh={() => {
+                setAutoRefresh((v) => {
+                  savePrefs({ autoRefresh: !v })
+                  return !v
+                })
+              }}
+            />
+          )}
+        </Suspense>
 
         {fullscreen && (
           <button

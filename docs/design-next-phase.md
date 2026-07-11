@@ -58,8 +58,9 @@ The app is a working Open-Meteo weather globe (React + R3F + three-globe). UI is
 
 - [x] Initial JS payload smaller; globe in its own chunk
 - [x] Default UI quieter; all prior words still present (hover/focus/touch reveal)
-- [ ] Build + lint pass; README has deploy steps
-- [ ] App still works: search, favorites, forecasts, themes
+- [x] Build + lint pass; README has deploy steps
+- [x] Error boundary + OG meta + modal code-split + idle globe prefetch
+- [x] App still works: search, favorites, forecasts, themes
 
 ## Risks
 

@@ -19,6 +19,7 @@ export default function StatsPanel({
   dark = true,
   onRefresh,
   refreshing,
+  error = false,
   hidden,
   hourly = [],
 }) {
@@ -115,7 +116,22 @@ export default function StatsPanel({
 
         <p className={`mt-3 text-[10px] ${mute}`}>Now</p>
 
-        {refreshing && !c ? (
+        {error && !c ? (
+          <div className="mt-1 text-right">
+            <p className={`text-[12px] ${dark ? 'text-rose-300/80' : 'text-rose-600'}`}>
+              Could not load weather
+            </p>
+            <button
+              type="button"
+              onClick={onRefresh}
+              className={`mt-1 text-[11px] underline-offset-2 hover:underline ${
+                dark ? 'text-white/45' : 'text-slate-500'
+              }`}
+            >
+              Retry
+            </button>
+          </div>
+        ) : refreshing && !c ? (
           <div className="skeleton mt-1 ml-auto h-9 w-20" />
         ) : (
           <div className="mt-0.5 flex items-start justify-end gap-0.5">

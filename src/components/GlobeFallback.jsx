@@ -11,14 +11,21 @@ export default function GlobeFallback({ dark = true }) {
     >
       <div className="flex flex-col items-center gap-3">
         <div
-          className={`h-10 w-10 rounded-full border-2 ${
-            dark
-              ? 'border-white/10 border-t-sky-400/70'
-              : 'border-slate-300/60 border-t-sky-600/70'
-          } animate-spin`}
+          className="relative h-14 w-14"
           aria-hidden
-        />
-        <p className={`text-[11px] ${dark ? 'text-white/30' : 'text-slate-600/70'}`}>
+        >
+          <div
+            className={`absolute inset-0 rounded-full border ${
+              dark ? 'border-white/8' : 'border-white/40'
+            }`}
+          />
+          <div
+            className={`absolute inset-0 rounded-full border-2 border-transparent ${
+              dark ? 'border-t-sky-400/60' : 'border-t-sky-700/50'
+            } animate-spin`}
+          />
+        </div>
+        <p className={`text-[11px] tracking-wide ${dark ? 'text-white/28' : 'text-slate-600/75'}`}>
           Loading globe
         </p>
       </div>
