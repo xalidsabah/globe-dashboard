@@ -144,51 +144,56 @@ html[dir='rtl'] .tabular-nums {
   }
 }
 
-/* —— Light theme —— */
+/* —— Light theme (higher contrast for readability over the sky) —— */
 .app-shell.light {
   background:
-    radial-gradient(ellipse 95% 70% at 50% -5%, #d4e6f7 0%, transparent 55%),
-    radial-gradient(ellipse 40% 40% at 90% 80%, rgba(147, 197, 253, 0.45), transparent 50%),
-    linear-gradient(165deg, #c5daf0 0%, #a8c4e0 42%, #b8cfe6 100%);
-  color: #0f172a;
+    radial-gradient(ellipse 95% 70% at 50% -5%, #e8f1fa 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 90% 80%, rgba(148, 180, 220, 0.35), transparent 50%),
+    linear-gradient(165deg, #dce8f4 0%, #c5d6e8 42%, #d0dde9 100%);
+  color: #0b1220;
 }
 
 .app-shell.light .app-aurora::before {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), transparent 70%);
-  opacity: 0.7;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4), transparent 70%);
+  opacity: 0.45;
 }
 
 .app-shell.light .app-aurora::after {
-  background: radial-gradient(circle, rgba(125, 211, 252, 0.4), transparent 70%);
+  background: radial-gradient(circle, rgba(100, 160, 220, 0.28), transparent 70%);
+  opacity: 0.35;
 }
 
 .app-shell.light .glass {
-  background: rgba(252, 253, 255, 0.92);
-  border: 1px solid rgba(90, 120, 165, 0.22);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.14);
   box-shadow:
-    0 18px 48px rgba(40, 70, 120, 0.14),
+    0 18px 48px rgba(15, 23, 42, 0.14),
+    0 0 0 1px rgba(15, 23, 42, 0.04),
     inset 0 1px 0 #fff;
+  color: #0f172a;
 }
 
 .app-shell.light .glass-soft {
-  background: rgba(248, 250, 252, 0.9);
-  border: 1px solid rgba(90, 120, 160, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #0f172a;
 }
 
 .app-shell.light .glass-pill {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(90, 120, 160, 0.22);
-  box-shadow: 0 4px 18px rgba(40, 70, 120, 0.1);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+  color: #0f172a;
 }
 
 .app-shell.light .surface-card {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(100, 130, 170, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.12);
 }
 
 .app-shell.light .surface-card:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(100, 130, 170, 0.28);
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.2);
 }
 
 /* Main stage frame */
@@ -208,8 +213,8 @@ html[dir='rtl'] .tabular-nums {
 
 .app-shell.light .stage-frame:not(.is-fullscreen) {
   box-shadow:
-    0 20px 60px rgba(40, 70, 120, 0.22),
-    0 0 0 1px rgba(255, 255, 255, 0.35);
+    0 20px 60px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.1);
 }
 
 /* Bottom panel */
@@ -388,12 +393,13 @@ button:disabled {
 .app-shell.light .globe-vignette {
   background:
     radial-gradient(
-      ellipse 60% 70% at 50% 48%,
-      transparent 42%,
-      rgba(80, 120, 170, 0.12) 72%,
-      rgba(70, 100, 150, 0.28) 100%
+      ellipse 58% 68% at 50% 48%,
+      transparent 36%,
+      rgba(30, 58, 95, 0.14) 70%,
+      rgba(15, 35, 60, 0.32) 100%
     ),
-    linear-gradient(to top, rgba(90, 130, 180, 0.18) 0%, transparent 30%);
+    linear-gradient(to top, rgba(15, 40, 70, 0.22) 0%, transparent 32%),
+    linear-gradient(to bottom, rgba(15, 40, 70, 0.12) 0%, transparent 20%);
 }
 
 /* Tab pills in bottom panel */
@@ -410,10 +416,17 @@ button:disabled {
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.25);
 }
+.app-shell.light .panel-tab {
+  color: #334155;
+}
+.app-shell.light .panel-tab:hover {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.06);
+}
 .app-shell.light .panel-tab.active {
   background: #0f172a;
   color: #fff;
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
 .hour-bar {
@@ -487,9 +500,17 @@ button:disabled {
   color: rgba(255, 255, 255, 0.45);
 }
 .app-shell.light .kbd {
-  border-color: rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.04);
-  color: rgba(0, 0, 0, 0.45);
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(15, 23, 42, 0.65);
+}
+
+/* Light-mode readable secondary text helpers (use on overlays) */
+.app-shell.light .text-muted {
+  color: #334155;
+}
+.app-shell.light .text-faint {
+  color: #475569;
 }
 
 /* Text gradient utility */

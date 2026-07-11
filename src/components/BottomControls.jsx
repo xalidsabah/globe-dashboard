@@ -15,10 +15,10 @@ export default function BottomControls({
 }) {
   const { t } = useI18n()
   const active = dark ? 'bg-white text-[#0a1220] shadow-md' : 'bg-slate-900 text-white shadow-md'
-  const idle = dark ? 'text-white/55 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+  const idle = dark ? 'text-white/55 hover:text-white' : 'text-slate-800 hover:text-slate-950 font-medium'
   const round = dark
     ? 'h-8 w-8 border border-white/10 bg-[#0c1424]/80 text-white/75 hover:bg-white/10 hover:text-white'
-    : 'h-8 w-8 border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50'
+    : 'h-8 w-8 border border-slate-400/60 bg-white text-slate-900 shadow-md shadow-slate-400/20 hover:bg-slate-50'
 
   const lift =
     panelOpen && !fullscreen
@@ -84,8 +84,8 @@ export default function BottomControls({
         className={`pointer-events-auto absolute right-3 z-30 flex items-center gap-1.5 transition-all duration-300 sm:right-5 ${lift}`}
       >
         <span
-          className={`mr-1 hidden text-[10px] sm:inline ${
-            dark ? 'text-white/25' : 'text-slate-400'
+          className={`mr-1 hidden text-[10px] font-semibold sm:inline ${
+            dark ? 'text-white/25' : 'text-slate-700'
           }`}
         >
           {t('zoom')}

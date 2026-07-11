@@ -15,11 +15,11 @@ function windDisplay(kmh, unit) {
 }
 
 function aqiTone(tone, dark) {
-  if (tone === 'good') return dark ? 'text-emerald-400' : 'text-emerald-600'
-  if (tone === 'fair') return dark ? 'text-lime-300' : 'text-lime-700'
-  if (tone === 'moderate') return dark ? 'text-amber-300' : 'text-amber-600'
-  if (tone === 'poor' || tone === 'bad') return dark ? 'text-rose-300' : 'text-rose-600'
-  return dark ? 'text-white/55' : 'text-slate-500'
+  if (tone === 'good') return dark ? 'text-emerald-400' : 'text-emerald-700'
+  if (tone === 'fair') return dark ? 'text-lime-300' : 'text-lime-800'
+  if (tone === 'moderate') return dark ? 'text-amber-300' : 'text-amber-700'
+  if (tone === 'poor' || tone === 'bad') return dark ? 'text-rose-300' : 'text-rose-700'
+  return dark ? 'text-white/55' : 'text-slate-700'
 }
 
 export default function StatsPanel({
@@ -86,8 +86,8 @@ export default function StatsPanel({
     },
   ]
 
-  const mute = dark ? 'text-white/30' : 'text-slate-400'
-  const main = dark ? 'text-white' : 'text-slate-900'
+  const mute = dark ? 'text-white/30' : 'text-slate-600'
+  const main = dark ? 'text-white' : 'text-slate-950'
 
   return (
     <div className="pointer-events-none absolute right-3 top-[30%] z-20 flex -translate-y-1/2 flex-col items-end sm:right-5 fade-in">
@@ -97,7 +97,7 @@ export default function StatsPanel({
         } ${
           dark
             ? 'border-white/[0.07] bg-black/40'
-            : 'border-slate-200/70 bg-white/80 shadow-sm'
+            : 'border-slate-400/45 bg-white text-slate-900 shadow-md shadow-slate-500/20'
         }`}
       >
         {/* Primary header + temp */}
@@ -118,7 +118,7 @@ export default function StatsPanel({
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
               dark
                 ? 'text-white/35 hover:bg-white/8 hover:text-white/80'
-                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <svg
@@ -150,8 +150,8 @@ export default function StatsPanel({
             <button
               type="button"
               onClick={onRefresh}
-              className={`mt-1 text-[11px] underline-offset-2 hover:underline ${
-                dark ? 'text-white/45' : 'text-slate-500'
+              className={`mt-1 text-[11px] font-medium underline-offset-2 hover:underline ${
+                dark ? 'text-white/45' : 'text-slate-800'
               }`}
             >
               {t('retry')}
@@ -181,8 +181,8 @@ export default function StatsPanel({
 
         {outdoor?.label && (
           <p
-            className={`quiet-secondary quiet-gap text-right text-[11px] leading-snug ${
-              dark ? 'text-sky-300/70' : 'text-sky-700/80'
+            className={`quiet-secondary quiet-gap text-right text-[11px] font-medium leading-snug ${
+              dark ? 'text-sky-300/70' : 'text-sky-800'
             }`}
             title={outdoor.condition || t('bestOutdoors', { time: outdoor.label })}
           >
@@ -201,7 +201,7 @@ export default function StatsPanel({
               <div
                 key={i}
                 className={`spark-bar flex-1 rounded-sm ${
-                  dark ? 'bg-sky-400/45' : 'bg-sky-500/40'
+                  dark ? 'bg-sky-400/45' : 'bg-sky-600/70'
                 }`}
                 style={{ height: `${22 + ((v - lo) / span) * 78}%` }}
               />
@@ -211,19 +211,19 @@ export default function StatsPanel({
 
         <ul
           className={`quiet-secondary quiet-rule space-y-1.5 border-t ${
-            dark ? 'border-white/5' : 'border-slate-200/80'
+            dark ? 'border-white/5' : 'border-slate-300'
           }`}
         >
           {metrics.map((row) => (
             <li key={row.label} className="flex items-baseline justify-between gap-2 text-right">
-              <span className={`text-[10px] ${mute}`}>{row.label}</span>
+              <span className={`text-[10px] font-medium ${mute}`}>{row.label}</span>
               <span
-                className={`text-[12px] tabular-nums ${
+                className={`text-[12px] font-semibold tabular-nums ${
                   row.tone
                     ? aqiTone(row.tone, dark)
                     : dark
                       ? 'text-white/75'
-                      : 'text-slate-700'
+                      : 'text-slate-900'
                 }`}
               >
                 {row.value}

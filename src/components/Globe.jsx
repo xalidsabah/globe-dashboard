@@ -228,19 +228,19 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef }) {
         title={`${city.name}${temp != null ? ` ${temp}°` : ''}`}
       >
         <span
-          className={`rounded-md border px-1.5 py-0.5 text-[9px] font-medium shadow-lg backdrop-blur-md whitespace-nowrap ${
+          className={`rounded-md border px-1.5 py-0.5 text-[9px] font-semibold shadow-lg backdrop-blur-md whitespace-nowrap ${
             active
               ? dark
                 ? 'border-amber-400/50 bg-amber-400/25 text-white'
-                : 'border-amber-500/50 bg-amber-50 text-slate-900'
+                : 'border-amber-600/70 bg-amber-100 text-slate-950 shadow-md'
               : dark
                 ? 'border-white/20 bg-black/70 text-white/95 group-hover:border-sky-400/50'
-                : 'border-slate-300 bg-white text-slate-800 group-hover:border-sky-400 shadow-md'
+                : 'border-slate-500/50 bg-white text-slate-950 group-hover:border-sky-600 shadow-md'
           }`}
         >
           {city.name}
           {temp != null && (
-            <span className={active ? 'text-amber-200' : dark ? 'text-sky-300' : 'text-sky-600'}>
+            <span className={active ? (dark ? 'text-amber-200' : 'text-amber-800') : dark ? 'text-sky-300' : 'text-sky-800'}>
               {' '}
               {temp}°
             </span>

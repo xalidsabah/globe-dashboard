@@ -49,7 +49,7 @@ export default function Sidebar({
       className={`absolute left-0 top-0 bottom-0 z-20 flex ${width} flex-col border-r py-3 transition-[width] duration-300 ease-out ${
         dark
           ? 'border-white/[0.06] bg-[#060b16]/75 backdrop-blur-xl'
-          : 'border-slate-300/40 bg-white/80 backdrop-blur-xl'
+          : 'border-slate-400/40 bg-white/95 backdrop-blur-xl shadow-sm'
       }`}
       aria-label={t('menu')}
     >
@@ -83,12 +83,12 @@ export default function Sidebar({
         </button>
         {expanded && (
           <p
-            className={`ml-2.5 truncate text-[12px] font-medium ${
-              dark ? 'text-white/70' : 'text-slate-700'
+            className={`ml-2.5 truncate text-[12px] font-semibold ${
+              dark ? 'text-white/70' : 'text-slate-900'
             }`}
           >
             {t('weather')}{' '}
-            <span className={dark ? 'text-white/30' : 'text-slate-400'}>{t('globe')}</span>
+            <span className={dark ? 'text-white/30' : 'text-slate-600'}>{t('globe')}</span>
           </p>
         )}
       </div>
@@ -113,7 +113,7 @@ export default function Sidebar({
                     : 'bg-slate-900 text-white shadow-md'
                   : dark
                     ? 'text-white/40 hover:bg-white/5 hover:text-white/90'
-                    : 'text-slate-500 hover:bg-slate-200/70 hover:text-slate-800'
+                    : 'text-slate-700 hover:bg-slate-200/80 hover:text-slate-950'
               }`}
             >
               {active && (
@@ -155,7 +155,7 @@ export default function Sidebar({
           } ${
             dark
               ? 'text-white/40 hover:bg-white/5 hover:text-white/90'
-              : 'text-slate-500 hover:bg-slate-200/70 hover:text-slate-800'
+              : 'text-slate-700 hover:bg-slate-200/80 hover:text-slate-950'
           }`}
         >
           <svg
@@ -185,7 +185,7 @@ export default function Sidebar({
             } ${
               dark
                 ? 'text-white/40 hover:bg-rose-500/10 hover:text-rose-300'
-                : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'
+                : 'text-slate-700 hover:bg-rose-50 hover:text-rose-700'
             }`}
           >
             <svg

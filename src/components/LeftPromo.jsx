@@ -34,8 +34,8 @@ export default function LeftPromo({
   const otherFavs = favorites.filter((f) => !samePlace(f, place)).slice(0, 4)
   const aqiText = air?.labelKey ? t(air.labelKey) : air?.label && air.label !== '—' ? air.label : null
 
-  const mute = dark ? 'text-white/30' : 'text-slate-500/80'
-  const soft = dark ? 'text-white/50' : 'text-slate-600'
+  const mute = dark ? 'text-white/30' : 'text-slate-700'
+  const soft = dark ? 'text-white/50' : 'text-slate-900'
 
   return (
     <div
@@ -81,10 +81,10 @@ export default function LeftPromo({
         className={`pointer-events-auto mt-2 flex items-center gap-2 rounded-2xl border px-2.5 py-2 backdrop-blur-md ${
           dark
             ? 'border-white/[0.08] bg-black/40 text-white'
-            : 'border-slate-200/80 bg-white/85 text-slate-800 shadow-sm'
+            : 'border-slate-400/50 bg-white text-slate-900 shadow-md shadow-slate-400/25'
         }`}
       >
-        <span className={`shrink-0 ${dark ? 'text-sky-300/90' : 'text-sky-500'}`}>
+        <span className={`shrink-0 ${dark ? 'text-sky-300/90' : 'text-sky-700'}`}>
           <WeatherIcon icon={c?.icon || 'cloud'} size={24} isDay={c?.isDay !== false} />
         </span>
         <div className="min-w-0 flex-1">
@@ -120,10 +120,10 @@ export default function LeftPromo({
               type="button"
               onClick={() => onSelectFavorite?.(f)}
               title={f.label || f.name}
-              className={`max-w-full truncate rounded-full px-2 py-0.5 text-[10px] transition ${
+              className={`max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium transition ${
                 dark
                   ? 'text-white/40 hover:bg-white/5 hover:text-amber-200/90'
-                  : 'text-slate-500 hover:bg-white/70 hover:text-amber-700'
+                  : 'text-slate-700 hover:bg-white hover:text-amber-800 border border-slate-300/80 bg-white/70'
               }`}
             >
               <span className="opacity-60" aria-hidden>

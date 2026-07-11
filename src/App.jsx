@@ -542,7 +542,7 @@ export default function App() {
     try {
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', dark ? '#050a14' : '#9ebbd8')
+        ?.setAttribute('content', dark ? '#050a14' : '#9bb8d4')
     } catch {
       /* ignore */
     }
@@ -571,7 +571,7 @@ export default function App() {
         } ${
           dark
             ? 'border-white/[0.08] bg-[#050a14]'
-            : 'border-white/40 bg-[#8fafd0]'
+            : 'border-slate-400/50 bg-[#9bb8d4]'
         }`}
       >
         {loading && <div className="top-progress" aria-hidden />}

@@ -22,9 +22,9 @@ export default function TopBar({
   sidebarWide = false,
 }) {
   const { t } = useI18n()
-  const mute = dark ? 'text-white/40' : 'text-slate-500'
+  const mute = dark ? 'text-white/40' : 'text-slate-700'
   const pillBtn = `glass-pill flex h-7 shrink-0 items-center justify-center rounded-full ${
-    dark ? 'text-white/50 hover:text-white/90' : 'text-slate-500 hover:text-slate-800'
+    dark ? 'text-white/50 hover:text-white/90' : 'text-slate-700 hover:text-slate-950'
   }`
 
   return (
@@ -63,8 +63,8 @@ export default function TopBar({
         <button
           type="button"
           onClick={onToggleUnit}
-          className={`glass-pill flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] tabular-nums ${
-            dark ? 'text-white/70 hover:text-white' : 'text-slate-600'
+          className={`glass-pill flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] font-semibold tabular-nums ${
+            dark ? 'text-white/70 hover:text-white' : 'text-slate-900'
           }`}
           title={t('toggleUnit')}
           aria-label={t('toggleUnit')}
@@ -75,8 +75,8 @@ export default function TopBar({
         <button
           type="button"
           onClick={onOpenSearch}
-          className={`glass-pill hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] sm:flex ${
-            dark ? 'text-white/45 hover:text-white/85' : 'text-slate-500 hover:text-slate-800'
+          className={`glass-pill hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium sm:flex ${
+            dark ? 'text-white/45 hover:text-white/85' : 'text-slate-800 hover:text-slate-950'
           }`}
           title={t('searchCities')}
         >
@@ -153,8 +153,8 @@ export default function TopBar({
 
       <div className="pointer-events-none z-30 flex max-w-[200px] flex-col items-center px-1">
         <h1
-          className={`text-center text-[15px] font-medium tracking-tight sm:text-[17px] ${
-            dark ? 'text-white/80' : 'text-slate-700'
+          className={`text-center text-[15px] font-semibold tracking-tight sm:text-[17px] ${
+            dark ? 'text-white/80' : 'text-slate-950'
           }`}
         >
           {t('appName')}
@@ -203,8 +203,8 @@ export default function TopBar({
               />
             </span>
             <span
-              className={`hidden text-[12px] font-medium sm:inline ${
-                dark ? 'text-white/85' : 'text-slate-700'
+              className={`hidden text-[12px] font-semibold sm:inline ${
+                dark ? 'text-white/85' : 'text-slate-900'
               }`}
             >
               {t('guest')}

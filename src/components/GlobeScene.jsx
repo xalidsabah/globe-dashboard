@@ -56,7 +56,7 @@ export default function GlobeScene({
       }}
       style={{ background: 'transparent' }}
     >
-      <color attach="background" args={[dark ? '#050a14' : '#7fa8cc']} />
+      <color attach="background" args={[dark ? '#050a14' : '#8eafcf']} />
       <Suspense fallback={null}>
         <Globe
           zoom={zoom}
