@@ -33,7 +33,11 @@ First public release — live on Vercel.
 
 ## [Unreleased]
 
+### Added
+- Air quality (European AQI + PM2.5) via Open-Meteo Air Quality API
+- “Best outdoors” window from next 12 hours (stats + left panel)
+- Pause WebGL render loop when the tab is hidden
+
 ### Planned
-- GitHub remote + CI green on PR
 - Optional custom domain
-- Optional AQI / outdoor-window insights
+- Optional GitHub → Vercel auto-deploy link

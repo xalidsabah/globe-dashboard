@@ -236,6 +236,32 @@ export function evaluateConditions(weather, place) {
     })
   }
 
+  // —— Air quality ——
+  const air = weather?.air
+  if (air?.aqi != null) {
+    const aqi = Number(air.aqi)
+    if (aqi > 60) {
+      score += aqi > 80 ? 18 : 10
+      alerts.push({
+        id: 'aqi',
+        level: aqi > 80 ? 'High' : 'Medium',
+        title: 'Air quality',
+        detail: `AQI ${Math.round(aqi)} · ${air.label || 'Elevated'}${
+          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)} µg/m³` : ''
+        }. Limit outdoor exertion if sensitive.`,
+      })
+    } else {
+      alerts.push({
+        id: 'aqi',
+        level: 'Low',
+        title: 'Air quality',
+        detail: `AQI ${Math.round(aqi)} · ${air.label || 'OK'}${
+          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)} µg/m³` : ''
+        }`,
+      })
+    }
+  }
+
   // —— Current summary (always first-ish) ——
   alerts.unshift({
     id: 'conditions',

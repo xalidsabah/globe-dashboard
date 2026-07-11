@@ -51,7 +51,9 @@ Works on desktop and mobile. Dark and light themes. Saves your favorites on this
 | **Search** | Any city worldwide (geocoding via Open-Meteo) |
 | **Locate me** | Use your GPS and jump to nearby weather |
 | **Forecast** | Current, next 24 hours, and 7 days |
-| **Alerts** | Derived risk: precip windows, UV, wind, freeze/heat |
+| **Alerts** | Derived risk: precip windows, UV, wind, freeze/heat, air quality |
+| **Air quality** | European AQI + PM2.5 from Open-Meteo |
+| **Outdoors** | Suggested best window in the next ~12 hours |
 | **Favorites** | Star cities · quick switch · soft arcs on the globe |
 | **Share** | Share or copy current conditions |
 | **Units & theme** | °C / °F · light / dark · remembers your prefs |

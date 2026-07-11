@@ -7,7 +7,13 @@ import StatsPanel from './components/StatsPanel'
 import BottomControls from './components/BottomControls'
 import BottomPanel from './components/BottomPanel'
 import FavoriteStrip from './components/FavoriteStrip'
-import { fetchWeather, fetchCitiesSnapshot, reverseGeocode, QUICK_CITIES } from './lib/weather'
+import {
+  fetchWeatherBundle,
+  fetchCitiesSnapshot,
+  reverseGeocode,
+  bestOutdoorWindow,
+  QUICK_CITIES,
+} from './lib/weather'
 import {
   loadFavorites,
   toggleFavorite as toggleFavoriteStore,
@@ -136,7 +142,7 @@ export default function App() {
       setWeatherError(false)
       const t0 = performance.now()
       try {
-        const data = await fetchWeather(p.lat, p.lng, p.timezone || 'auto')
+        const data = await fetchWeatherBundle(p.lat, p.lng, p.timezone || 'auto')
         setWeather(data)
         setWeatherError(false)
         setLiveMs(Math.round(performance.now() - t0))
@@ -149,7 +155,8 @@ export default function App() {
         )
         if (!silent) {
           const deg = data.current?.temp != null ? Math.round(data.current.temp) : '—'
-          showToast(`${p.name} · ${deg}°`)
+          const aqiBit = data.air?.label && data.air.label !== '—' ? ` · AQI ${data.air.label}` : ''
+          showToast(`${p.name} · ${deg}°${aqiBit}`)
         }
       } catch (e) {
         console.error(e)
@@ -160,6 +167,11 @@ export default function App() {
       }
     },
     [showToast]
+  )
+
+  const outdoor = useMemo(
+    () => bestOutdoorWindow(weather?.hourly, weather?.timezone),
+    [weather]
   )
 
   useEffect(() => {
@@ -565,6 +577,7 @@ export default function App() {
               place={place}
               weather={weather}
               unit={unit}
+              outdoor={outdoor}
               onHowItWorks={() => setHowOpen(true)}
               onOpenSearch={() => {
                 setPanelOpen(false)
@@ -592,6 +605,7 @@ export default function App() {
               error={weatherError}
               onRefresh={() => loadWeather(place)}
               hourly={weather?.hourly || []}
+              outdoor={outdoor}
             />
             {!panelOpen && (
               <FavoriteStrip

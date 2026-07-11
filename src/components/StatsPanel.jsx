@@ -13,6 +13,14 @@ function windDisplay(kmh, unit) {
   return { value: Math.round(kmh), unit: 'km/h' }
 }
 
+function aqiTone(tone, dark) {
+  if (tone === 'good') return dark ? 'text-emerald-400' : 'text-emerald-600'
+  if (tone === 'fair') return dark ? 'text-lime-300' : 'text-lime-700'
+  if (tone === 'moderate') return dark ? 'text-amber-300' : 'text-amber-600'
+  if (tone === 'poor' || tone === 'bad') return dark ? 'text-rose-300' : 'text-rose-600'
+  return dark ? 'text-white/55' : 'text-slate-500'
+}
+
 export default function StatsPanel({
   weather,
   unit = 'C',
@@ -22,12 +30,14 @@ export default function StatsPanel({
   error = false,
   hidden,
   hourly = [],
+  outdoor = null,
 }) {
   const forceOpen = useQuietExpand()
   if (hidden) return null
 
   const c = weather?.current
   const day = weather?.daily?.[0]
+  const air = weather?.air
   const humidity = c?.humidity != null ? Math.round(c.humidity) : null
   const t = c?.temp
   const wind = windDisplay(c?.wind, unit)
@@ -57,6 +67,14 @@ export default function StatsPanel({
     {
       label: 'UV',
       value: c?.uv != null ? c.uv.toFixed(1) : day?.uvMax != null ? day.uvMax.toFixed(1) : '—',
+    },
+    {
+      label: 'AQI',
+      value:
+        air?.aqi != null
+          ? `${Math.round(air.aqi)} ${air.label || ''}`.trim()
+          : '—',
+      tone: air?.tone,
     },
   ]
 
@@ -146,10 +164,26 @@ export default function StatsPanel({
           </div>
         )}
 
-        {/* Secondary: feels + sparkline + metrics */}
+        {/* Secondary: feels + outdoor tip + sparkline + metrics */}
         {c?.feels != null && (
           <p className={`quiet-secondary quiet-gap text-right text-[11px] ${mute}`}>
             Feels like {temp(c.feels, unit)}°
+          </p>
+        )}
+
+        {outdoor?.label && (
+          <p
+            className={`quiet-secondary quiet-gap text-right text-[11px] leading-snug ${
+              dark ? 'text-sky-300/70' : 'text-sky-700/80'
+            }`}
+            title={
+              outdoor.condition
+                ? `${outdoor.condition}${outdoor.precipProb != null ? ` · ${Math.round(outdoor.precipProb)}% rain` : ''}`
+                : 'Best outdoor window'
+            }
+          >
+            Outdoors ~{outdoor.label}
+            {outdoor.temp != null ? ` · ${temp(outdoor.temp, unit)}°` : ''}
           </p>
         )}
 
@@ -179,7 +213,13 @@ export default function StatsPanel({
             <li key={row.label} className="flex items-baseline justify-between gap-2 text-right">
               <span className={`text-[10px] ${mute}`}>{row.label}</span>
               <span
-                className={`text-[12px] tabular-nums ${dark ? 'text-white/75' : 'text-slate-700'}`}
+                className={`text-[12px] tabular-nums ${
+                  row.tone
+                    ? aqiTone(row.tone, dark)
+                    : dark
+                      ? 'text-white/75'
+                      : 'text-slate-700'
+                }`}
               >
                 {row.value}
                 {row.sub ? (

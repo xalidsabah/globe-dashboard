@@ -9,6 +9,7 @@ export default function LeftPromo({
   place,
   weather,
   unit = 'C',
+  outdoor = null,
   onHowItWorks,
   onOpenSearch,
   onToggleFavorite,
@@ -23,6 +24,7 @@ export default function LeftPromo({
   if (hidden) return null
 
   const c = weather?.current
+  const air = weather?.air
   const temp = c?.temp
   const display =
     temp == null ? '—' : unit === 'F' ? Math.round((temp * 9) / 5 + 32) : Math.round(temp)
@@ -87,6 +89,7 @@ export default function LeftPromo({
           <p className={`truncate text-[10px] leading-tight ${mute}`}>
             {c?.label || 'Loading…'}
             {localTime ? ` · ${localTime}` : ''}
+            {air?.label && air.label !== '—' ? ` · AQI ${air.label}` : ''}
           </p>
         </div>
         <p className="shrink-0 text-lg font-medium tabular-nums leading-none tracking-tight">
@@ -97,6 +100,13 @@ export default function LeftPromo({
           <StarButton size="sm" filled={isFavorite} dark={dark} onClick={onToggleFavorite} />
         )}
       </div>
+
+      {outdoor?.label && (
+        <p className={`quiet-secondary quiet-gap text-[11px] leading-snug ${mute}`}>
+          Best outdoors ~{outdoor.label}
+          {outdoor.condition ? ` · ${outdoor.condition}` : ''}
+        </p>
+      )}
 
       {/* Secondary: favorite chips */}
       {otherFavs.length > 0 && (

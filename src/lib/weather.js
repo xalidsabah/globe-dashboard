@@ -2,6 +2,7 @@
 
 const GEOCODE = 'https://geocoding-api.open-meteo.com/v1/search'
 const FORECAST = 'https://api.open-meteo.com/v1/forecast'
+const AIR_QUALITY = 'https://air-quality-api.open-meteo.com/v1/air-quality'
 
 export const WMO = {
   0: { label: 'Clear sky', icon: 'sun', group: 'clear' },
@@ -160,6 +161,95 @@ async function fetchWithRetry(url, { retries = 2, timeoutMs = 12000 } = {}) {
     }
   }
   throw lastErr || new Error('Network failed')
+}
+
+/** European AQI bands (Open-Meteo consolidated index) */
+export function aqiLabel(aqi) {
+  if (aqi == null || Number.isNaN(aqi)) return { label: '—', level: 'unknown', tone: 'neutral' }
+  const n = Number(aqi)
+  if (n <= 20) return { label: 'Good', level: 'good', tone: 'good' }
+  if (n <= 40) return { label: 'Fair', level: 'fair', tone: 'fair' }
+  if (n <= 60) return { label: 'Moderate', level: 'moderate', tone: 'moderate' }
+  if (n <= 80) return { label: 'Poor', level: 'poor', tone: 'poor' }
+  if (n <= 100) return { label: 'Very poor', level: 'very_poor', tone: 'bad' }
+  return { label: 'Extreme', level: 'extreme', tone: 'bad' }
+}
+
+export async function fetchAirQuality(lat, lng) {
+  const url = new URL(AIR_QUALITY)
+  url.searchParams.set('latitude', String(lat))
+  url.searchParams.set('longitude', String(lng))
+  url.searchParams.set(
+    'current',
+    ['european_aqi', 'pm2_5', 'pm10', 'us_aqi'].join(',')
+  )
+  url.searchParams.set('timezone', 'auto')
+  try {
+    const res = await fetchWithRetry(url, { retries: 1, timeoutMs: 10000 })
+    const data = await res.json()
+    const cur = data.current || {}
+    const aqi = cur.european_aqi ?? cur.us_aqi ?? null
+    const meta = aqiLabel(aqi)
+    return {
+      aqi,
+      aqiUs: cur.us_aqi ?? null,
+      pm25: cur.pm2_5 ?? null,
+      pm10: cur.pm10 ?? null,
+      ...meta,
+      time: cur.time,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Weather + air quality in parallel (AQ failure is non-fatal) */
+export async function fetchWeatherBundle(lat, lng, timezone = 'auto') {
+  const [weather, air] = await Promise.all([
+    fetchWeather(lat, lng, timezone),
+    fetchAirQuality(lat, lng),
+  ])
+  return { ...weather, air }
+}
+
+/**
+ * Best outdoor window in next 12 hours: low precip, mild wind, reasonable UV/temp.
+ * Returns null if no decent hour.
+ */
+export function bestOutdoorWindow(hourly, timeZone) {
+  const hrs = (hourly || []).slice(0, 12)
+  if (!hrs.length) return null
+
+  let best = null
+  for (const h of hrs) {
+    const precip = h.precipProb ?? 0
+    const wind = h.wind ?? 0
+    const uv = h.uv ?? 0
+    const temp = h.temp
+    const badGroup = h.group === 'storm' || h.group === 'snow'
+    if (badGroup) continue
+    if (precip > 55) continue
+    if (wind > 50) continue
+    // score: lower is better
+    let score = precip * 1.2 + wind * 0.5 + Math.max(0, uv - 7) * 8
+    if (temp != null) {
+      if (temp < 5 || temp > 32) score += 25
+      else if (temp >= 14 && temp <= 26) score -= 8
+    }
+    if (h.group === 'clear') score -= 6
+    if (h.group === 'rain') score += 15
+    if (!best || score < best.score) best = { ...h, score }
+  }
+  if (!best || best.score > 70) return null
+  return {
+    time: best.time,
+    label: formatHour(best.time, timeZone),
+    temp: best.temp,
+    precipProb: best.precipProb,
+    uv: best.uv,
+    condition: best.label,
+    score: best.score,
+  }
 }
 
 export async function fetchWeather(lat, lng, timezone = 'auto') {
