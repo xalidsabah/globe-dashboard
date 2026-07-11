@@ -375,36 +375,38 @@ export default function App() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords
-        const you = t('yourLocation')
         try {
-          // Use reverse geocode only for coords/timezone/country (weather + capital).
-          // Always label the pin as "Your location" — never the nearby city name.
+          // Label with the resolved place name (city / area), not a generic "Your location"
           const found = await reverseGeocode(lat, lng)
+          const placeName = found.name || t('yourLocation')
+          const placeLabel =
+            found.label ||
+            [found.name, found.admin1, found.country].filter(Boolean).join(', ') ||
+            placeName
           selectPlace(
             {
               ...found,
-              id: `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
-              name: you,
-              label: you,
+              id: found.id || `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
+              name: placeName,
+              label: placeLabel,
               lat,
               lng,
-              admin1: '',
             },
             { openHourly: true, fromSearch: true }
           )
-          showToast(t('toast_locFound'))
+          showToast(t('toast_nearYou', { name: placeName }))
         } catch (e) {
           console.error(e)
           selectPlace(
             {
               id: `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
-              name: you,
+              name: t('yourLocation'),
               country: '',
               admin1: '',
               lat,
               lng,
               timezone: 'auto',
-              label: you,
+              label: t('yourLocation'),
             },
             { openHourly: true, fromSearch: true }
           )
