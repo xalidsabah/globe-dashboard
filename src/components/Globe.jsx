@@ -205,6 +205,7 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef, emphasized }) {
   const { camera } = useThree()
   const [front, setFront] = useState(true)
   const world = useRef(new THREE.Vector3())
+  // Only pins marked for this view (focused capital or country capital) — not every capital
   const isCap = Boolean(city.isCapital)
 
   // Hide labels on the far side of the globe (behind Earth from the camera)
@@ -357,9 +358,10 @@ export default function Globe({
   const [lod, setLod] = useState('far')
   const lodRef = useRef('far')
 
+  // far = whole planet, mid = multi-country, near = one country (show its capital)
   const distToLod = (d) => {
-    if (d > 300) return 'far'
-    if (d > 210) return 'mid'
+    if (d > 310) return 'far'
+    if (d > 235) return 'mid'
     return 'near'
   }
 
@@ -455,25 +457,56 @@ export default function Globe({
     }
   }, [capital])
 
-  const points = useMemo(() => {
-    const list = [...(cities || [])]
-    if (focusCity && !list.some((c) => near(c, focusCity))) list.push(focusCity)
-    if (capitalCity && !list.some((c) => near(c, capitalCity))) list.push(capitalCity)
-    for (const f of favorites || []) {
-      if (f.lat == null || f.lng == null) continue
-      if (!list.some((c) => near(c, f))) list.push(f)
-    }
-    return list.map((c) => {
-      const active = near(c, focusCity)
-      const cap = Boolean(c.isCapital) || near(c, capitalCity)
-      return {
-        lat: c.lat,
-        lng: c.lng,
-        size: active ? 0.65 : cap ? 0.48 : 0.26,
-        color: weatherColor(c.group, dark, active || (cap && emphasizedPoint(c, capitalCity))),
-      }
-    })
-  }, [cities, focusCity, capitalCity, favorites, dark])
+  const majorNames = useMemo(
+    () =>
+      new Set([
+        'New York',
+        'Los Angeles',
+        'Chicago',
+        'Toronto',
+        'London',
+        'Paris',
+        'Tokyo',
+        'Dubai',
+        'Sydney',
+        'Singapore',
+        'São Paulo',
+        'Cairo',
+        'Mumbai',
+        'Berlin',
+        'Moscow',
+        'Hong Kong',
+        'Mexico City',
+        'Istanbul',
+        'Seoul',
+        'Lagos',
+        'Buenos Aires',
+        'Shanghai',
+        'Rio de Janeiro',
+      ]),
+    []
+  )
+
+  /**
+   * Capital star only for:
+   * - the currently focused place if it is a capital (search/select)
+   * - that country's capital when zoomed in enough to see one country (near)
+   * Never dump every capital on the planet at once.
+   */
+  const focusIsCapital = Boolean(focusCity?.isCapital)
+  const showCountryCapital =
+    lod === 'near' && Boolean(capitalCity) && Boolean(focusCity)
+
+  const pinRole = (c) => {
+    const isFocus = near(c, focusCity)
+    const isCountryCap = capitalCity && near(c, capitalCity)
+    // Star badge only on the active capital context
+    const asCapital =
+      (isFocus && focusIsCapital) ||
+      (showCountryCapital && isCountryCap) ||
+      (isFocus && isCountryCap)
+    return { isFocus, isCountryCap, asCapital }
+  }
 
   // Soft arcs linking favorites
   const arcs = useMemo(() => {
@@ -506,33 +539,8 @@ export default function Globe({
     return out.slice(0, 12)
   }, [favorites, dark])
 
-  // Labels by zoom LOD + always focus + country capital when focused
+  // Labels: sparse when zoomed out; one capital when zoomed into a country
   const labelCities = useMemo(() => {
-    const major = new Set([
-      'New York',
-      'Los Angeles',
-      'Chicago',
-      'Toronto',
-      'London',
-      'Paris',
-      'Tokyo',
-      'Dubai',
-      'Sydney',
-      'Singapore',
-      'São Paulo',
-      'Cairo',
-      'Mumbai',
-      'Berlin',
-      'Moscow',
-      'Hong Kong',
-      'Mexico City',
-      'Istanbul',
-      'Seoul',
-      'Lagos',
-      'Buenos Aires',
-      'Shanghai',
-      'Rio de Janeiro',
-    ])
     const favKeys = new Set(
       (favorites || []).map((f) => `${Number(f.lat).toFixed(1)},${Number(f.lng).toFixed(1)}`)
     )
@@ -541,18 +549,20 @@ export default function Globe({
       if (!c || c.lat == null || c.lng == null) return
       const key = `${Number(c.lat).toFixed(2)},${Number(c.lng).toFixed(2)}`
       const prev = byKey.get(key)
-      const merged = {
-        ...prev,
-        ...c,
-        isCapital: Boolean(c.isCapital || prev?.isCapital || flags.isCapital),
-        showLabel: flags.showLabel ?? prev?.showLabel ?? true,
-        emphasized: Boolean(flags.emphasized || prev?.emphasized),
-      }
-      if (!prev || (c.name && !prev.name) || c.temp != null || flags.emphasized) {
-        byKey.set(key, merged)
-      } else {
-        byKey.set(key, { ...merged, ...prev, isCapital: merged.isCapital })
-      }
+      const asCap = Boolean(flags.isCapital)
+      byKey.set(key, {
+        name: c.name || prev?.name,
+        lat: c.lat,
+        lng: c.lng,
+        country: c.country || prev?.country,
+        id: c.id || prev?.id,
+        temp: c.temp ?? prev?.temp,
+        group: c.group ?? prev?.group,
+        icon: c.icon ?? prev?.icon,
+        // Only star when this call (or a previous one) explicitly requested capital
+        isCapital: asCap || Boolean(prev?.isCapital),
+        emphasized: Boolean(flags.emphasized || asCap || prev?.emphasized),
+      })
     }
 
     const sameCountry = (c) => {
@@ -561,43 +571,74 @@ export default function Globe({
     }
 
     for (const c of cities || []) {
-      const isCap = Boolean(c.isCapital)
       const isFav = favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)
-      const isFocus = near(c, focusCity)
-      const isCountryCap = capitalCity && near(c, capitalCity)
+      const { isFocus, isCountryCap, asCapital } = pinRole(c)
       const inFocusCountry = sameCountry(c)
+      const isMajor = majorNames.has(c.name)
 
       if (lod === 'far') {
-        // Zoomed out: capitals (+ weather) only, keep labels readable
-        if (isCap || isCountryCap || isFocus || isFav) add(c, { isCapital: isCap || isCountryCap })
+        // World view: major metros only — no capital stars worldwide
+        if (isFocus || isFav || isMajor) add(c, { isCapital: asCapital })
       } else if (lod === 'mid') {
-        // Regional view: capitals + major metros
-        if (isCap || isCountryCap || isFocus || isFav || major.has(c.name)) {
-          add(c, { isCapital: isCap || isCountryCap })
-        }
+        // Regional: majors + focus/favs; still no multi-capital flood
+        if (isFocus || isFav || isMajor) add(c, { isCapital: asCapital })
       } else {
-        // Country / city zoom: all pins, emphasize capital of focused country
-        if (isCap || isCountryCap || isFocus || isFav || major.has(c.name) || inFocusCountry) {
+        // Country zoom: cities in focused country + majors; one capital star
+        if (isFocus || isFav || isMajor || inFocusCountry || (showCountryCapital && isCountryCap)) {
           add(c, {
-            isCapital: isCap || isCountryCap,
-            emphasized: Boolean(isCountryCap && focusCity && !near(focusCity, capitalCity)),
+            isCapital: asCapital,
+            emphasized: asCapital && !isFocus,
           })
         }
       }
     }
 
-    for (const f of favorites || []) add(f)
-    if (focusCity) add(focusCity)
-    // Always show country capital when focused (with weather from snapshot)
-    if (capitalCity) {
+    for (const f of favorites || []) {
+      const role = pinRole(f)
+      add(f, { isCapital: role.asCapital })
+    }
+
+    // Always pin the focused/search place (capital icon if it is a capital)
+    if (focusCity) {
+      add(focusCity, {
+        isCapital: focusIsCapital || pinRole(focusCity).asCapital,
+      })
+    }
+
+    // Only when zoomed into a country: show that country's capital (once) + weather
+    if (showCountryCapital && capitalCity) {
       add(capitalCity, {
         isCapital: true,
-        emphasized: Boolean(focusCity && !near(focusCity, capitalCity)),
+        emphasized: !near(focusCity, capitalCity),
       })
     }
 
     return Array.from(byKey.values())
-  }, [cities, focusCity, capitalCity, favorites, lod, focus?.country])
+  }, [
+    cities,
+    focusCity,
+    capitalCity,
+    favorites,
+    lod,
+    focus?.country,
+    focusIsCapital,
+    showCountryCapital,
+    majorNames,
+  ])
+
+  // Dot markers match label LOD — never paint every capital as a large point
+  const points = useMemo(() => {
+    return labelCities.map((c) => {
+      const active = near(c, focusCity)
+      const cap = Boolean(c.isCapital)
+      return {
+        lat: c.lat,
+        lng: c.lng,
+        size: active ? 0.6 : cap ? 0.42 : 0.26,
+        color: weatherColor(c.group, dark, active || cap),
+      }
+    })
+  }, [labelCities, focusCity, dark])
 
   return (
     <>
@@ -626,18 +667,12 @@ export default function Globe({
             focus &&
             Math.abs(city.lat - focus.lat) < 0.5 &&
             Math.abs(city.lng - focus.lng) < 0.5
-          const emphasized =
-            Boolean(city.emphasized) ||
-            (capitalCity &&
-              near(city, capitalCity) &&
-              focusCity &&
-              !near(focusCity, capitalCity))
           return (
             <CityPin
               key={`${city.name}-${city.lat}-${city.lng}`}
-              city={city}
+              city={{ ...city, isCapital: Boolean(city.isCapital) }}
               active={active}
-              emphasized={emphasized}
+              emphasized={Boolean(city.isCapital)}
               dark={dark}
               unit={unit}
               onSelect={onSelectCity}
@@ -662,8 +697,4 @@ export default function Globe({
       />
     </>
   )
-}
-
-function emphasizedPoint(c, capitalCity) {
-  return capitalCity && Math.abs(c.lat - capitalCity.lat) < 0.4 && Math.abs(c.lng - capitalCity.lng) < 0.4
 }

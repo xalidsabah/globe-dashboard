@@ -131,10 +131,43 @@ export function capitalForCountry(country, countryCode) {
   return hit ? { ...hit, id: `capital-${hit.countryCode || hit.name}` } : null
 }
 
+function namesMatch(a, b) {
+  const clean = (s) =>
+    String(s || '')
+      .toLowerCase()
+      .replace(/\./g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  const na = clean(a)
+  const nb = clean(b)
+  if (!na || !nb) return false
+  if (na === nb) return true
+  // "Washington DC" ↔ "Washington", "New Delhi" ↔ "Delhi"
+  if (na.includes(nb) || nb.includes(na)) return true
+  return false
+}
+
 /** True if this place is (near) a known capital. */
-export function isCapitalPlace(place, eps = 0.6) {
-  if (!place || place.lat == null || place.lng == null) return false
+export function isCapitalPlace(place, eps = 0.75) {
+  if (!place) return false
   if (place.isCapital) return true
+
+  // Name + country (search results)
+  if (place.name) {
+    const byCountry = capitalForCountry(place.country, place.countryCode)
+    if (byCountry && namesMatch(place.name, byCountry.name)) return true
+    // Name-only fallback against capital list
+    if (
+      CAPITALS.some(
+        (c) => c.isCapital && namesMatch(place.name, c.name) &&
+          (!place.country || normCountry(place.country) === normCountry(c.country))
+      )
+    ) {
+      return true
+    }
+  }
+
+  if (place.lat == null || place.lng == null) return false
   return CAPITALS.some(
     (c) =>
       c.isCapital &&

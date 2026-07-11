@@ -346,8 +346,8 @@ export default function App() {
       pushRecent(placeObj)
       saveLastPlace(placeObj)
       writePlaceToUrl(placeObj)
-      // Country-level zoom — capital + cities readable, not street-close
-      setZoom(1.22)
+      // Country-level zoom (near LOD) — one capital star + nearby cities
+      setZoom(1.35)
       setResetToken((n) => n + 1)
       setFullscreen(false)
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
