@@ -178,12 +178,34 @@ function EarthGlobe({ dark, points, arcs }) {
   return <primitive object={globeObj} />
 }
 
-function CityPin({ city, active, dark, unit, onSelect, groupRef }) {
+/** Professional capital marker — filled star (map cartography standard) */
+function CapitalIcon({ size = 12, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M12 2.5l2.9 5.88 6.5.95-4.7 4.58 1.11 6.47L12 17.27l-5.81 3.06 1.11-6.47-4.7-4.58 6.5-.95L12 2.5z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="0.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function CityPin({ city, active, dark, unit, onSelect, groupRef, emphasized }) {
   // Same math as three-globe points → pins sit on land
   const pos = polar2Cartesian(city.lat, city.lng, GLOBE_R * 1.02)
   const { camera } = useThree()
   const [front, setFront] = useState(true)
   const world = useRef(new THREE.Vector3())
+  const isCap = Boolean(city.isCapital)
 
   // Hide labels on the far side of the globe (behind Earth from the camera)
   useFrame(() => {
@@ -202,19 +224,21 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef }) {
         ? Math.round((city.temp * 9) / 5 + 32)
         : Math.round(city.temp)
 
-  // Always keep the active selection pin; hide others when on the back face
-  if (!front && !active) return null
+  // Always keep the active / emphasized capital pin; hide others on the back face
+  if (!front && !active && !emphasized) return null
+
+  const showLabel = active || emphasized || isCap || city.showLabel !== false
 
   return (
     <Html
       position={pos}
       center
-      distanceFactor={155}
-      zIndexRange={[15, 0]}
+      distanceFactor={isCap || emphasized ? 170 : 155}
+      zIndexRange={[isCap || active ? 30 : 15, 0]}
       style={{
-        pointerEvents: front || active ? 'auto' : 'none',
+        pointerEvents: front || active || emphasized ? 'auto' : 'none',
         userSelect: 'none',
-        opacity: front || active ? 1 : 0,
+        opacity: front || active || emphasized ? 1 : 0,
       }}
       occlude={false}
     >
@@ -224,36 +248,78 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef }) {
           e.stopPropagation()
           onSelect?.(city)
         }}
-        className={`city-pin group flex flex-col items-center gap-0.5 ${active ? 'z-10' : ''}`}
-        title={`${city.name}${temp != null ? ` ${temp}°` : ''}`}
+        className={`city-pin group flex flex-col items-center gap-0.5 ${active || emphasized ? 'z-10' : ''}`}
+        title={`${city.name}${isCap ? ' · Capital' : ''}${temp != null ? ` ${temp}°` : ''}`}
       >
-        <span
-          className={`rounded-md border px-1.5 py-0.5 text-[9px] font-semibold shadow-lg backdrop-blur-md whitespace-nowrap ${
-            active
-              ? dark
-                ? 'border-amber-400/50 bg-amber-400/25 text-white'
-                : 'border-amber-600/70 bg-amber-100 text-slate-950 shadow-md'
-              : dark
-                ? 'border-white/20 bg-black/70 text-white/95 group-hover:border-sky-400/50'
-                : 'border-slate-500/50 bg-white text-slate-950 group-hover:border-sky-600 shadow-md'
-          }`}
-        >
-          {city.name}
-          {temp != null && (
-            <span className={active ? (dark ? 'text-amber-200' : 'text-amber-800') : dark ? 'text-sky-300' : 'text-sky-800'}>
-              {' '}
-              {temp}°
-            </span>
-          )}
-        </span>
-        <span
-          className="h-2.5 w-2.5 rounded-full ring-2 shadow-md"
-          style={{
-            background: weatherColor(city.group || city.icon, dark, active),
-            boxShadow: active ? '0 0 12px rgba(245,197,24,0.9)' : undefined,
-            ringColor: active ? 'rgba(245,197,24,0.4)' : 'transparent',
-          }}
-        />
+        {showLabel && (
+          <span
+            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold shadow-lg backdrop-blur-md whitespace-nowrap ${
+              isCap || emphasized
+                ? dark
+                  ? 'border-amber-300/55 bg-slate-950/85 text-white shadow-amber-500/20'
+                  : 'border-amber-700/60 bg-white text-slate-950 shadow-md'
+                : active
+                  ? dark
+                    ? 'border-amber-400/50 bg-amber-400/25 text-white'
+                    : 'border-amber-600/70 bg-amber-100 text-slate-950 shadow-md'
+                  : dark
+                    ? 'border-white/20 bg-black/70 text-white/95 group-hover:border-sky-400/50'
+                    : 'border-slate-500/50 bg-white text-slate-950 group-hover:border-sky-600 shadow-md'
+            }`}
+          >
+            {(isCap || emphasized) && (
+              <span
+                className={
+                  dark ? 'text-amber-300' : 'text-amber-700'
+                }
+                title="Capital"
+              >
+                <CapitalIcon size={10} />
+              </span>
+            )}
+            <span>{city.name}</span>
+            {temp != null && (
+              <span
+                className={
+                  isCap || emphasized || active
+                    ? dark
+                      ? 'text-amber-200'
+                      : 'text-amber-800'
+                    : dark
+                      ? 'text-sky-300'
+                      : 'text-sky-800'
+                }
+              >
+                {temp}°
+              </span>
+            )}
+          </span>
+        )}
+        {isCap || emphasized ? (
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-full border shadow-md ${
+              dark
+                ? 'border-amber-300/70 bg-slate-950/90 text-amber-300'
+                : 'border-amber-600/70 bg-white text-amber-700'
+            }`}
+            style={{
+              boxShadow: active || emphasized
+                ? '0 0 14px rgba(245,197,24,0.75)'
+                : '0 2px 8px rgba(0,0,0,0.25)',
+            }}
+          >
+            <CapitalIcon size={11} />
+          </span>
+        ) : (
+          <span
+            className="h-2.5 w-2.5 rounded-full ring-2 shadow-md"
+            style={{
+              background: weatherColor(city.group || city.icon, dark, active),
+              boxShadow: active ? '0 0 12px rgba(245,197,24,0.9)' : undefined,
+              ringColor: active ? 'rgba(245,197,24,0.4)' : 'transparent',
+            }}
+          />
+        )}
       </button>
     </Html>
   )
@@ -278,6 +344,7 @@ export default function Globe({
   focus = null,
   cities = [],
   favorites = [],
+  capital = null,
   unit = 'C',
   onSelectCity,
 }) {
@@ -285,7 +352,16 @@ export default function Globe({
   const groupRef = useRef()
   const { camera } = useThree()
   const targetZoom = useRef(zoom)
-  const baseDist = useRef(235)
+  // Further out by default so capitals / cities are readable on the globe
+  const baseDist = useRef(280)
+  const [lod, setLod] = useState('far')
+  const lodRef = useRef('far')
+
+  const distToLod = (d) => {
+    if (d > 300) return 'far'
+    if (d > 210) return 'mid'
+    return 'near'
+  }
 
   useEffect(() => {
     targetZoom.current = zoom
@@ -312,13 +388,16 @@ export default function Globe({
       controlsRef.current.target.set(0, 0, 0)
       controlsRef.current.update()
     }
+    const next = distToLod(dist)
+    lodRef.current = next
+    setLod(next)
   }, [resetToken, mode, camera, focus?.lat, focus?.lng])
 
   useFrame(() => {
     const controls = controlsRef.current
     if (controls) {
       controls.autoRotate = Boolean(autoRotate && mode === '3d')
-      controls.autoRotateSpeed = 0.2
+      controls.autoRotateSpeed = 0.18
       if (mode === '2d') {
         controls.minPolarAngle = Math.PI / 2 - 0.05
         controls.maxPolarAngle = Math.PI / 2 + 0.05
@@ -334,6 +413,11 @@ export default function Globe({
       const diff = Math.abs(current - desired)
       if (diff > 1.5) {
         camera.position.setLength(THREE.MathUtils.lerp(current, desired, 0.1))
+      }
+      const next = distToLod(current)
+      if (next !== lodRef.current) {
+        lodRef.current = next
+        setLod(next)
       }
     }
   })
@@ -357,29 +441,39 @@ export default function Globe({
       temp: focus.temp,
       group: focus.group,
       icon: focus.icon,
+      isCapital: focus.isCapital,
+      country: focus.country,
     }
   }, [focus])
 
+  const capitalCity = useMemo(() => {
+    if (!capital?.lat || capital.lng == null) return null
+    return {
+      ...capital,
+      id: capital.id || `capital-${capital.name}`,
+      isCapital: true,
+    }
+  }, [capital])
+
   const points = useMemo(() => {
     const list = [...(cities || [])]
-    if (focusCity && !list.some((c) => near(c, focusCity))) {
-      list.push(focusCity)
-    }
-    // Favorites that aren't in the quick-city list
+    if (focusCity && !list.some((c) => near(c, focusCity))) list.push(focusCity)
+    if (capitalCity && !list.some((c) => near(c, capitalCity))) list.push(capitalCity)
     for (const f of favorites || []) {
       if (f.lat == null || f.lng == null) continue
       if (!list.some((c) => near(c, f))) list.push(f)
     }
     return list.map((c) => {
       const active = near(c, focusCity)
+      const cap = Boolean(c.isCapital) || near(c, capitalCity)
       return {
         lat: c.lat,
         lng: c.lng,
-        size: active ? 0.6 : 0.28,
-        color: weatherColor(c.group, dark, active),
+        size: active ? 0.65 : cap ? 0.48 : 0.26,
+        color: weatherColor(c.group, dark, active || (cap && emphasizedPoint(c, capitalCity))),
       }
     })
-  }, [cities, focusCity, favorites, dark])
+  }, [cities, focusCity, capitalCity, favorites, dark])
 
   // Soft arcs linking favorites
   const arcs = useMemo(() => {
@@ -412,12 +506,13 @@ export default function Globe({
     return out.slice(0, 12)
   }, [favorites, dark])
 
-  // Labels: major cities + favorites + always the focused/search place
+  // Labels by zoom LOD + always focus + country capital when focused
   const labelCities = useMemo(() => {
     const major = new Set([
       'New York',
       'Los Angeles',
       'Chicago',
+      'Toronto',
       'London',
       'Paris',
       'Tokyo',
@@ -435,35 +530,74 @@ export default function Globe({
       'Seoul',
       'Lagos',
       'Buenos Aires',
+      'Shanghai',
+      'Rio de Janeiro',
     ])
     const favKeys = new Set(
       (favorites || []).map((f) => `${Number(f.lat).toFixed(1)},${Number(f.lng).toFixed(1)}`)
     )
     const byKey = new Map()
-    const add = (c) => {
+    const add = (c, flags = {}) => {
       if (!c || c.lat == null || c.lng == null) return
       const key = `${Number(c.lat).toFixed(2)},${Number(c.lng).toFixed(2)}`
       const prev = byKey.get(key)
-      // Prefer named focus / richer data
-      if (!prev || (c.name && !prev.name) || c.temp != null) byKey.set(key, { ...prev, ...c })
-      else byKey.set(key, prev)
+      const merged = {
+        ...prev,
+        ...c,
+        isCapital: Boolean(c.isCapital || prev?.isCapital || flags.isCapital),
+        showLabel: flags.showLabel ?? prev?.showLabel ?? true,
+        emphasized: Boolean(flags.emphasized || prev?.emphasized),
+      }
+      if (!prev || (c.name && !prev.name) || c.temp != null || flags.emphasized) {
+        byKey.set(key, merged)
+      } else {
+        byKey.set(key, { ...merged, ...prev, isCapital: merged.isCapital })
+      }
+    }
+
+    const sameCountry = (c) => {
+      if (!focus?.country || !c?.country) return false
+      return String(c.country).toLowerCase() === String(focus.country).toLowerCase()
     }
 
     for (const c of cities || []) {
-      if (
-        major.has(c.name) ||
-        near(c, focusCity) ||
-        favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)
-      ) {
-        add(c)
+      const isCap = Boolean(c.isCapital)
+      const isFav = favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)
+      const isFocus = near(c, focusCity)
+      const isCountryCap = capitalCity && near(c, capitalCity)
+      const inFocusCountry = sameCountry(c)
+
+      if (lod === 'far') {
+        // Zoomed out: capitals (+ weather) only, keep labels readable
+        if (isCap || isCountryCap || isFocus || isFav) add(c, { isCapital: isCap || isCountryCap })
+      } else if (lod === 'mid') {
+        // Regional view: capitals + major metros
+        if (isCap || isCountryCap || isFocus || isFav || major.has(c.name)) {
+          add(c, { isCapital: isCap || isCountryCap })
+        }
+      } else {
+        // Country / city zoom: all pins, emphasize capital of focused country
+        if (isCap || isCountryCap || isFocus || isFav || major.has(c.name) || inFocusCountry) {
+          add(c, {
+            isCapital: isCap || isCountryCap,
+            emphasized: Boolean(isCountryCap && focusCity && !near(focusCity, capitalCity)),
+          })
+        }
       }
     }
+
     for (const f of favorites || []) add(f)
-    // Critical: searched places are not in QUICK_CITIES — always pin focus
     if (focusCity) add(focusCity)
+    // Always show country capital when focused (with weather from snapshot)
+    if (capitalCity) {
+      add(capitalCity, {
+        isCapital: true,
+        emphasized: Boolean(focusCity && !near(focusCity, capitalCity)),
+      })
+    }
 
     return Array.from(byKey.values())
-  }, [cities, focusCity, favorites])
+  }, [cities, focusCity, capitalCity, favorites, lod, focus?.country])
 
   return (
     <>
@@ -492,11 +626,18 @@ export default function Globe({
             focus &&
             Math.abs(city.lat - focus.lat) < 0.5 &&
             Math.abs(city.lng - focus.lng) < 0.5
+          const emphasized =
+            Boolean(city.emphasized) ||
+            (capitalCity &&
+              near(city, capitalCity) &&
+              focusCity &&
+              !near(focusCity, capitalCity))
           return (
             <CityPin
               key={`${city.name}-${city.lat}-${city.lng}`}
               city={city}
               active={active}
+              emphasized={emphasized}
               dark={dark}
               unit={unit}
               onSelect={onSelectCity}
@@ -510,15 +651,19 @@ export default function Globe({
         ref={controlsRef}
         enablePan={false}
         enableZoom
-        minDistance={120}
-        maxDistance={420}
+        minDistance={130}
+        maxDistance={460}
         rotateSpeed={mode === '2d' ? 0.35 : 0.5}
         zoomSpeed={0.75}
         autoRotate={Boolean(autoRotate && mode === '3d')}
-        autoRotateSpeed={0.2}
+        autoRotateSpeed={0.18}
         enableDamping
         dampingFactor={0.08}
       />
     </>
   )
+}
+
+function emphasizedPoint(c, capitalCity) {
+  return capitalCity && Math.abs(c.lat - capitalCity.lat) < 0.4 && Math.abs(c.lng - capitalCity.lng) < 0.4
 }

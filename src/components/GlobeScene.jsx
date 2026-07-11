@@ -36,6 +36,7 @@ export default function GlobeScene({
   focus,
   cities,
   favorites,
+  capital = null,
   unit,
   quality = 'high',
   onSelectCity,
@@ -46,7 +47,7 @@ export default function GlobeScene({
 
   return (
     <Canvas
-      camera={{ position: [0, 40, 240], fov: 45, near: 1, far: 2000 }}
+      camera={{ position: [0, 40, 300], fov: 45, near: 1, far: 2000 }}
       dpr={dpr}
       frameloop={pageVisible ? 'always' : 'demand'}
       gl={{
@@ -67,6 +68,7 @@ export default function GlobeScene({
           focus={focus}
           cities={cities}
           favorites={favorites}
+          capital={capital}
           unit={unit}
           onSelectCity={onSelectCity}
         />

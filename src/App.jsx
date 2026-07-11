@@ -14,6 +14,7 @@ import {
   bestOutdoorWindow,
   QUICK_CITIES,
 } from './lib/weather'
+import { capitalForCountry, isCapitalPlace } from './lib/capitals'
 import {
   loadFavorites,
   toggleFavorite as toggleFavoriteStore,
@@ -79,8 +80,10 @@ export default function App() {
   const [autoTheme, setAutoTheme] = useState(prefs.autoTheme === true)
   const [quality, setQuality] = useState(prefs.quality === 'low' ? 'low' : 'high')
   const [mode, setMode] = useState('3d')
-  const [zoom, setZoom] = useState(1)
+  // Start zoomed out so capitals / cities are visible on the globe
+  const [zoom, setZoom] = useState(0.72)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [capitalSnap, setCapitalSnap] = useState(null)
   const [panelMode, setPanelMode] = useState('hourly')
   const [activeNav, setActiveNav] = useState('home')
   const [howOpen, setHowOpen] = useState(false)
@@ -192,11 +195,94 @@ export default function App() {
     setPlace(start)
     writePlaceToUrl(start)
     loadWeather(start, { silent: true })
-    fetchCitiesSnapshot(QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` })))
-      .then(setCitySnaps)
-      .catch(() => {})
+    // Batch weather for metros + capitals (Open-Meteo multi-location)
+    const seed = QUICK_CITIES.map((c) => ({
+      ...c,
+      id: c.id || `city-${c.name}`,
+      isCapital: Boolean(c.isCapital || isCapitalPlace(c)),
+    }))
+    // Chunk if needed — API accepts many points; keep under ~40 per request
+    const chunk = (arr, n) => {
+      const out = []
+      for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n))
+      return out
+    }
+    Promise.all(chunk(seed, 40).map((part) => fetchCitiesSnapshot(part)))
+      .then((parts) => setCitySnaps(parts.flat()))
+      .catch(() => setCitySnaps(seed))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // When place changes, resolve country capital + load its weather for the pin
+  useEffect(() => {
+    if (!place?.country && !place?.countryCode) {
+      setCapitalSnap(null)
+      return
+    }
+    const cap = capitalForCountry(place.country, place.countryCode)
+    if (!cap) {
+      setCapitalSnap(null)
+      return
+    }
+    const same =
+      Math.abs(cap.lat - place.lat) < 0.5 && Math.abs(cap.lng - place.lng) < 0.5
+    if (same && weather?.current) {
+      setCapitalSnap({
+        ...cap,
+        temp: weather.current.temp,
+        group: weather.current.group,
+        icon: weather.current.icon,
+        isCapital: true,
+      })
+      return
+    }
+
+    let cancelled = false
+    // Pin immediately; weather fills in from snapshot batch or dedicated fetch
+    setCapitalSnap((prev) => {
+      if (
+        prev &&
+        Math.abs(prev.lat - cap.lat) < 0.2 &&
+        Math.abs(prev.lng - cap.lng) < 0.2 &&
+        prev.temp != null
+      ) {
+        return { ...prev, ...cap, isCapital: true }
+      }
+      return { ...cap, isCapital: true, temp: prev?.temp, group: prev?.group, icon: prev?.icon }
+    })
+
+    fetchCitiesSnapshot([{ ...cap, id: cap.id || `capital-${cap.name}` }])
+      .then((list) => {
+        if (cancelled) return
+        const row = list[0] || {}
+        setCapitalSnap({ ...cap, ...row, isCapital: true })
+        setCitySnaps((prev) => {
+          const match = (c) =>
+            Math.abs(c.lat - cap.lat) < 0.35 && Math.abs(c.lng - cap.lng) < 0.35
+          if (prev.some(match)) {
+            return prev.map((c) => (match(c) ? { ...c, ...row, isCapital: true } : c))
+          }
+          return [...prev, { ...cap, ...row, isCapital: true }]
+        })
+      })
+      .catch(() => {
+        /* keep placeholder capital pin */
+      })
+
+    return () => {
+      cancelled = true
+    }
+    // weather fields only — avoid re-fetching on full weather object churn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    place?.lat,
+    place?.lng,
+    place?.country,
+    place?.countryCode,
+    weather?.current?.temp,
+    weather?.current?.group,
+    weather?.current?.icon,
+  ])
 
   // Deep link back/forward
   useEffect(() => {
@@ -260,7 +346,8 @@ export default function App() {
       pushRecent(placeObj)
       saveLastPlace(placeObj)
       writePlaceToUrl(placeObj)
-      setZoom(1.08)
+      // Country-level zoom — capital + cities readable, not street-close
+      setZoom(1.22)
       setResetToken((n) => n + 1)
       setFullscreen(false)
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
@@ -401,7 +488,7 @@ export default function App() {
     }
     if (id === 'home') {
       setPanelOpen(false)
-      setZoom(1)
+      setZoom(0.72)
       setMode('3d')
       setAutoRotate(true)
       setResetToken((n) => n + 1)
@@ -422,7 +509,7 @@ export default function App() {
   }
 
   const handleResetView = () => {
-    setZoom(1)
+    setZoom(0.72)
     setMode('3d')
     setAutoRotate(true)
     setResetToken((n) => n + 1)
@@ -552,13 +639,23 @@ export default function App() {
     if (!place) return null
     return {
       name: place.name,
+      country: place.country,
       lat: place.lat,
       lng: place.lng,
       temp: weather?.current?.temp,
       group: weather?.current?.group,
       icon: weather?.current?.icon,
+      isCapital: isCapitalPlace(place) || Boolean(place.isCapital),
     }
   }, [place, weather])
+
+  const capitalForGlobe = useMemo(() => {
+    if (!capitalSnap) return null
+    return {
+      ...capitalSnap,
+      isCapital: true,
+    }
+  }, [capitalSnap])
 
   return (
     <div className={`app-shell relative h-full w-full overflow-hidden ${dark ? '' : 'light'}`}>
@@ -587,6 +684,7 @@ export default function App() {
               focus={focus}
               cities={citySnaps}
               favorites={favorites}
+              capital={capitalForGlobe}
               unit={unit}
               quality={quality}
               onSelectCity={(city) => selectPlace(city, { openHourly: true })}

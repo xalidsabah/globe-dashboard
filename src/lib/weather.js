@@ -1,5 +1,7 @@
 /** Open-Meteo — free, no API key, accurate global weather */
 
+import { capitalPinRows, isCapitalPlace } from './capitals'
+
 const GEOCODE = 'https://geocoding-api.open-meteo.com/v1/search'
 const FORECAST = 'https://api.open-meteo.com/v1/forecast'
 const AIR_QUALITY = 'https://air-quality-api.open-meteo.com/v1/air-quality'
@@ -442,38 +444,45 @@ function normalizeWeather(data) {
   }
 }
 
-/** Well-known world cities for globe pins + search shortcuts */
-export const QUICK_CITIES = [
+/** Major metros + regional hubs for globe pins (capitals merged separately) */
+const METRO_CITIES = [
   { name: 'New York', country: 'United States', lat: 40.7128, lng: -74.006, timezone: 'America/New_York' },
   { name: 'Los Angeles', country: 'United States', lat: 34.0522, lng: -118.2437, timezone: 'America/Los_Angeles' },
   { name: 'Chicago', country: 'United States', lat: 41.8781, lng: -87.6298, timezone: 'America/Chicago' },
   { name: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832, timezone: 'America/Toronto' },
-  { name: 'Mexico City', country: 'Mexico', lat: 19.4326, lng: -99.1332, timezone: 'America/Mexico_City' },
-  { name: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278, timezone: 'Europe/London' },
-  { name: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522, timezone: 'Europe/Paris' },
-  { name: 'Berlin', country: 'Germany', lat: 52.52, lng: 13.405, timezone: 'Europe/Berlin' },
-  { name: 'Madrid', country: 'Spain', lat: 40.4168, lng: -3.7038, timezone: 'Europe/Madrid' },
-  { name: 'Rome', country: 'Italy', lat: 41.9028, lng: 12.4964, timezone: 'Europe/Rome' },
-  { name: 'Moscow', country: 'Russia', lat: 55.7558, lng: 37.6173, timezone: 'Europe/Moscow' },
   { name: 'Istanbul', country: 'Turkey', lat: 41.0082, lng: 28.9784, timezone: 'Europe/Istanbul' },
   { name: 'Dubai', country: 'UAE', lat: 25.2048, lng: 55.2708, timezone: 'Asia/Dubai' },
-  { name: 'Cairo', country: 'Egypt', lat: 30.0444, lng: 31.2357, timezone: 'Africa/Cairo' },
   { name: 'Lagos', country: 'Nigeria', lat: 6.5244, lng: 3.3792, timezone: 'Africa/Lagos' },
-  { name: 'Nairobi', country: 'Kenya', lat: -1.2921, lng: 36.8219, timezone: 'Africa/Nairobi' },
   { name: 'Johannesburg', country: 'South Africa', lat: -26.2041, lng: 28.0473, timezone: 'Africa/Johannesburg' },
   { name: 'Mumbai', country: 'India', lat: 19.076, lng: 72.8777, timezone: 'Asia/Kolkata' },
-  { name: 'Delhi', country: 'India', lat: 28.6139, lng: 77.209, timezone: 'Asia/Kolkata' },
-  { name: 'Bangkok', country: 'Thailand', lat: 13.7563, lng: 100.5018, timezone: 'Asia/Bangkok' },
-  { name: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198, timezone: 'Asia/Singapore' },
   { name: 'Hong Kong', country: 'China', lat: 22.3193, lng: 114.1694, timezone: 'Asia/Hong_Kong' },
   { name: 'Shanghai', country: 'China', lat: 31.2304, lng: 121.4737, timezone: 'Asia/Shanghai' },
-  { name: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503, timezone: 'Asia/Tokyo' },
-  { name: 'Seoul', country: 'South Korea', lat: 37.5665, lng: 126.978, timezone: 'Asia/Seoul' },
   { name: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093, timezone: 'Australia/Sydney' },
   { name: 'Melbourne', country: 'Australia', lat: -37.8136, lng: 144.9631, timezone: 'Australia/Melbourne' },
   { name: 'Auckland', country: 'New Zealand', lat: -36.8509, lng: 174.7645, timezone: 'Pacific/Auckland' },
   { name: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333, timezone: 'America/Sao_Paulo' },
-  { name: 'Buenos Aires', country: 'Argentina', lat: -34.6037, lng: -58.3816, timezone: 'America/Argentina/Buenos_Aires' },
-  { name: 'Lima', country: 'Peru', lat: -12.0464, lng: -77.0428, timezone: 'America/Lima' },
-  { name: 'Bogotá', country: 'Colombia', lat: 4.711, lng: -74.0721, timezone: 'America/Bogota' },
+  { name: 'Rio de Janeiro', country: 'Brazil', lat: -22.9068, lng: -43.1729, timezone: 'America/Sao_Paulo' },
 ]
+
+function mergeCityLists(...lists) {
+  const byKey = new Map()
+  for (const list of lists) {
+    for (const c of list || []) {
+      if (c?.lat == null || c?.lng == null) continue
+      const key = `${Number(c.lat).toFixed(2)},${Number(c.lng).toFixed(2)}`
+      const prev = byKey.get(key)
+      const isCap = c.isCapital || isCapitalPlace(c)
+      byKey.set(key, {
+        ...prev,
+        ...c,
+        id: c.id || prev?.id || `city-${c.name}`,
+        isCapital: Boolean(isCap || prev?.isCapital),
+        label: c.label || prev?.label || [c.name, c.country].filter(Boolean).join(', '),
+      })
+    }
+  }
+  return Array.from(byKey.values())
+}
+
+/** Well-known world cities for globe pins + search shortcuts (includes capitals) */
+export const QUICK_CITIES = mergeCityLists(capitalPinRows(), METRO_CITIES)
