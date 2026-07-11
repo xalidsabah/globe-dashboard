@@ -318,20 +318,50 @@ export default function Globe({
     }
   })
 
+  const near = (a, b, eps = 0.35) =>
+    a &&
+    b &&
+    a.lat != null &&
+    b.lat != null &&
+    Math.abs(a.lat - b.lat) < eps &&
+    Math.abs(a.lng - b.lng) < eps
+
+  // Always include the selected/search focus so any city can pin, not only QUICK_CITIES
+  const focusCity = useMemo(() => {
+    if (focus?.lat == null || focus?.lng == null) return null
+    return {
+      id: `focus-${focus.lat},${focus.lng}`,
+      name: focus.name || 'Selected',
+      lat: focus.lat,
+      lng: focus.lng,
+      temp: focus.temp,
+      group: focus.group,
+      icon: focus.icon,
+    }
+  }, [focus])
+
   const points = useMemo(() => {
-    return (cities || []).map((c) => {
-      const active =
-        focus && Math.abs(c.lat - focus.lat) < 0.5 && Math.abs(c.lng - focus.lng) < 0.5
+    const list = [...(cities || [])]
+    if (focusCity && !list.some((c) => near(c, focusCity))) {
+      list.push(focusCity)
+    }
+    // Favorites that aren't in the quick-city list
+    for (const f of favorites || []) {
+      if (f.lat == null || f.lng == null) continue
+      if (!list.some((c) => near(c, f))) list.push(f)
+    }
+    return list.map((c) => {
+      const active = near(c, focusCity)
       return {
         lat: c.lat,
         lng: c.lng,
-        size: active ? 0.55 : 0.28,
+        size: active ? 0.6 : 0.28,
         color: weatherColor(c.group, dark, active),
       }
     })
-  }, [cities, focus, dark])
+  }, [cities, focusCity, favorites, dark])
 
-  // Soft arcs linking favorites (and focus when starred)
+  // Soft arcs linking favorites
   const arcs = useMemo(() => {
     const nodes = (favorites || []).filter((f) => f.lat != null && f.lng != null)
     if (nodes.length < 2) return []
@@ -348,7 +378,6 @@ export default function Globe({
         color: stroke,
       })
     }
-    // close ring if 3+ favorites
     if (nodes.length >= 3) {
       const a = nodes[nodes.length - 1]
       const b = nodes[0]
@@ -363,7 +392,7 @@ export default function Globe({
     return out.slice(0, 12)
   }, [favorites, dark])
 
-  // Show a curated set of well-placed labels (coords verified)
+  // Labels: major cities + favorites + always the focused/search place
   const labelCities = useMemo(() => {
     const major = new Set([
       'New York',
@@ -390,14 +419,31 @@ export default function Globe({
     const favKeys = new Set(
       (favorites || []).map((f) => `${Number(f.lat).toFixed(1)},${Number(f.lng).toFixed(1)}`)
     )
-    return (cities || []).filter((c) => {
-      if (major.has(c.name)) return true
-      if (focus && Math.abs(c.lat - focus.lat) < 0.5 && Math.abs(c.lng - focus.lng) < 0.5)
-        return true
-      if (favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)) return true
-      return false
-    })
-  }, [cities, focus, favorites])
+    const byKey = new Map()
+    const add = (c) => {
+      if (!c || c.lat == null || c.lng == null) return
+      const key = `${Number(c.lat).toFixed(2)},${Number(c.lng).toFixed(2)}`
+      const prev = byKey.get(key)
+      // Prefer named focus / richer data
+      if (!prev || (c.name && !prev.name) || c.temp != null) byKey.set(key, { ...prev, ...c })
+      else byKey.set(key, prev)
+    }
+
+    for (const c of cities || []) {
+      if (
+        major.has(c.name) ||
+        near(c, focusCity) ||
+        favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)
+      ) {
+        add(c)
+      }
+    }
+    for (const f of favorites || []) add(f)
+    // Critical: searched places are not in QUICK_CITIES — always pin focus
+    if (focusCity) add(focusCity)
+
+    return Array.from(byKey.values())
+  }, [cities, focusCity, favorites])
 
   return (
     <>

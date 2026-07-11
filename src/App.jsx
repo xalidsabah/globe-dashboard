@@ -543,7 +543,14 @@ export default function App() {
 
   const focus = useMemo(() => {
     if (!place) return null
-    return { name: place.name, lat: place.lat, lng: place.lng, temp: weather?.current?.temp }
+    return {
+      name: place.name,
+      lat: place.lat,
+      lng: place.lng,
+      temp: weather?.current?.temp,
+      group: weather?.current?.group,
+      icon: weather?.current?.icon,
+    }
   }, [place, weather])
 
   return (
