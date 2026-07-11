@@ -1,4 +1,4 @@
-/** Shareable place deep links: ?lat=&lng=&name=&tz=  (+ body=moon) */
+/** Shareable place deep links: ?lat=&lng=&name=&tz= */
 
 import { normalizePlace } from './places'
 import { MOON_PLACE, isMoonPlace } from './moon'

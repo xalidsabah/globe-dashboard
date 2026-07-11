@@ -1,14 +1,8 @@
-/**
- * #cool_weather_thing — The Moon as a searchable place.
- * Weather is science-flavored (NASA-style ranges), not live remote sensing.
- */
-
 export const MOON_PLACE = {
   id: 'special-moon',
   name: 'The Moon',
   country: 'Cislunar space',
   admin1: 'Earth’s satellite',
-  // Near Mare Tranquillitatis (Apollo 11) — for pin / share coords
   lat: 0.674,
   lng: 23.473,
   timezone: 'UTC',
@@ -32,13 +26,11 @@ const MOON_ALIASES = [
   'cislunar',
 ]
 
-/** True if the search query should surface the Moon. */
 export function matchMoonQuery(q) {
   if (!q) return false
   const s = String(q).trim().toLowerCase().replace(/\s+/g, ' ')
   if (!s) return false
   if (MOON_ALIASES.some((a) => s === a || s.includes(a))) return true
-  // Single-word fuzzy: "moo", "lun"
   if (s.length >= 3 && ('moon'.startsWith(s) || 'luna'.startsWith(s) || 'lunar'.startsWith(s))) {
     return true
   }
@@ -49,9 +41,7 @@ export function isMoonPlace(p) {
   return Boolean(p && (p.body === 'moon' || p.id === 'special-moon'))
 }
 
-/** Approximate lunar phase fraction 0..1 (0/1 = new, 0.5 = full). */
 export function lunarPhaseFraction(date = new Date()) {
-  // Synodic month ~ 29.530588853 days; ref new moon: 2000-01-06 18:14 UTC
   const ref = Date.UTC(2000, 0, 6, 18, 14, 0)
   const days = (date.getTime() - ref) / 86400000
   let f = (days / 29.530588853) % 1
@@ -70,17 +60,12 @@ export function lunarPhaseLabel(frac) {
   return 'Waning Crescent'
 }
 
-/**
- * Build a weather-bundle-shaped object for the Moon.
- * Day side ~ +120°C, night ~ −130°C (regolith extremes); vacuum; no wind/precip.
- */
 export function buildMoonWeather(date = new Date()) {
   const frac = lunarPhaseFraction(date)
   const phase = lunarPhaseLabel(frac)
-  // Illuminate "now" as slightly warmer near full, colder near new
-  const dayBias = Math.sin(frac * Math.PI) // 0 at new, 1 at full
-  const surfaceTemp = Math.round(-130 + dayBias * 250) // −130 … +120
-  const feels = surfaceTemp // no air
+  const dayBias = Math.sin(frac * Math.PI)
+  const surfaceTemp = Math.round(-130 + dayBias * 250)
+  const feels = surfaceTemp
   const isDay = dayBias > 0.35
   const icon = isDay ? 'sun' : 'fog'
   const group = isDay ? 'clear' : 'fog'
@@ -88,7 +73,6 @@ export function buildMoonWeather(date = new Date()) {
 
   const hours = []
   for (let i = 0; i < 24; i++) {
-    // One lunar day ~ 29.5 Earth days; sample slow drift
     const t = new Date(date.getTime() + i * 3600 * 1000)
     const f = lunarPhaseFraction(t)
     const bias = Math.sin(f * Math.PI)
@@ -167,7 +151,6 @@ export function buildMoonWeather(date = new Date()) {
       label,
       icon,
       group,
-      // Extra fields for UI
       moonPhase: phase,
       vacuum: true,
     },

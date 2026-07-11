@@ -20,7 +20,6 @@ const GROUP_LABEL_KEY = {
   favorite: 'favorites',
   recent: 'recent',
   popular: 'popularCities',
-  special: 'specialPlaces',
   result: null,
 }
 
@@ -107,24 +106,19 @@ export default function SearchModal({
     setError(null)
     const t = window.setTimeout(async () => {
       try {
-        // #cool_weather_thing — surface The Moon before (or without) geocode hits
-        const specials = []
+        const extras = []
         if (matchMoonQuery(q)) {
-          specials.push({
-            ...MOON_PLACE,
-            group: 'special',
-          })
+          extras.push({ ...MOON_PLACE, group: 'result' })
         }
         const list = await searchPlaces(q, 8)
         if (cancelled) return
         const geo = list.map((r) => toItem(r, 'result')).filter(Boolean)
-        setResults([...specials, ...geo])
+        setResults([...extras, ...geo])
         setActiveIdx(0)
       } catch {
         if (cancelled) return
-        // Still offer Moon if query matches even when geocode fails
         if (matchMoonQuery(q)) {
-          setResults([{ ...MOON_PLACE, group: 'special' }])
+          setResults([{ ...MOON_PLACE, group: 'result' }])
           setError(null)
         } else {
           setResults([])
@@ -173,7 +167,6 @@ export default function SearchModal({
   if (!open) return null
 
   const pick = (p) => {
-    // Moon / specials already have coords + body flags
     const place =
       p?.body === 'moon' || p?.id === 'special-moon'
         ? normalizePlace({ ...MOON_PLACE, ...p, body: 'moon', isSpecial: true })

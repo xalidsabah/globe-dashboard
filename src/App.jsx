@@ -153,7 +153,6 @@ export default function App() {
       setWeatherError(false)
       const t0 = performance.now()
       try {
-        // #cool_weather_thing — lunar weather is modeled (NASA-style ranges)
         if (isMoonPlace(p)) {
           const data = buildMoonWeather()
           setWeather(data)

@@ -10,7 +10,6 @@ const NIGHT_IMG =
   'https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-night.jpg'
 const TOPO_IMG =
   'https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-topology.png'
-// Lunar color map (three.js examples / NASA-derived)
 const MOON_IMG =
   'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg'
 
@@ -181,7 +180,6 @@ function EarthGlobe({ dark, points, arcs }) {
   return <primitive object={globeObj} />
 }
 
-/** #cool_weather_thing — full-stage Moon when user searches “moon” */
 function MoonBody({ phaseFraction = 0.5 }) {
   const meshRef = useRef()
   const tex = useMemo(() => {
@@ -191,17 +189,14 @@ function MoonBody({ phaseFraction = 0.5 }) {
     return t
   }, [])
 
-  // Soft spin
   useFrame((_, delta) => {
     if (meshRef.current) meshRef.current.rotation.y += delta * 0.04
   })
 
-  // Light angle shifts with phase (full = face-lit)
   const lightAngle = (phaseFraction - 0.5) * Math.PI * 2
 
   return (
     <group>
-      {/* Faint exosphere glow */}
       <mesh scale={1.06}>
         <sphereGeometry args={[GLOBE_R, 48, 48]} />
         <meshBasicMaterial
@@ -223,18 +218,12 @@ function MoonBody({ phaseFraction = 0.5 }) {
           bumpScale={1.2}
         />
       </mesh>
-      {/* Hard sunlight — no atmosphere scatter */}
       <directionalLight
-        position={[
-          Math.cos(lightAngle) * 200,
-          40,
-          Math.sin(lightAngle) * 200,
-        ]}
+        position={[Math.cos(lightAngle) * 200, 40, Math.sin(lightAngle) * 200]}
         intensity={2.8}
         color="#fff5e6"
       />
       <ambientLight intensity={0.12} color="#8899bb" />
-      {/* Distant sun glow sprite substitute */}
       <pointLight
         position={[Math.cos(lightAngle) * 280, 20, Math.sin(lightAngle) * 280]}
         intensity={1.2}
@@ -771,10 +760,7 @@ export default function Globe({
 
   return (
     <>
-      {isMoon ? (
-        // Moon carries its own hard sunlight + ambient
-        null
-      ) : dark ? (
+      {isMoon ? null : dark ? (
         <>
           <ambientLight intensity={2.6} />
           <directionalLight position={[10, 8, 12]} intensity={2.55} color="#ffffff" />

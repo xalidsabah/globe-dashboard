@@ -48,7 +48,6 @@ export function normalizePlace(city) {
     timezone: city.timezone || 'auto',
     label,
   }
-  // Easter eggs / special bodies (Moon, …)
   if (city.body) out.body = city.body
   if (city.isSpecial) out.isSpecial = true
   return out
