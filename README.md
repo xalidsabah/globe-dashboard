@@ -2,7 +2,8 @@
 
 Live global weather on a 3D Earth — powered by [Open-Meteo](https://open-meteo.com/) (no API key).
 
-**Live:** [https://globe-dashboard-eight.vercel.app](https://globe-dashboard-eight.vercel.app)
+**Live:** [https://globe-dashboard-eight.vercel.app](https://globe-dashboard-eight.vercel.app)  
+**Version:** `0.1.0` · see [CHANGELOG.md](CHANGELOG.md)
 
 ## Run
 
@@ -14,28 +15,36 @@ npm run dev
 Open http://127.0.0.1:5173
 
 ```bash
-npm run build    # production build → dist/
+npm run build    # production → dist/
 npm run preview  # serve dist locally
 npm run lint     # oxlint
+npm run ci       # lint + build (same as GitHub Actions)
 ```
 
 ## Deploy
 
-Static site — any host that serves `dist/`:
+Already on **Vercel** (project `globe-dashboard`). Redeploy:
 
 ```bash
-npm run build
+vercel --prod --yes
 ```
 
-Then publish the `dist` folder to:
+Or static host: build, publish `dist/`. No env vars required.
 
-- **Vercel / Netlify / Cloudflare Pages** — connect the repo or drag `dist`
-- **GitHub Pages** — set root to `dist` (or use an action)
-- **Any CDN / nginx** — serve `dist` as static files
+**Custom domain (optional):** Vercel → Project → Settings → Domains → add domain and follow DNS (CNAME/A).
 
-No env vars or API keys required.
+## GitHub remote (one-time)
 
-SPA note: if the host rewrites unknown paths, point them to `index.html` (default for most static hosts).
+This repo currently has no `origin`. To publish source + enable CI:
+
+```bash
+# create empty repo on GitHub, then:
+git remote add origin https://github.com/<you>/globe-dashboard.git
+git push -u origin master
+git push origin v0.1.0
+```
+
+CI runs on push/PR to `master`/`main` (`.github/workflows/ci.yml`): **lint + build**.
 
 ## Features
 
@@ -48,7 +57,7 @@ SPA note: if the host rewrites unknown paths, point them to `index.html` (defaul
 - **3D / 2D**, fullscreen, keyboard shortcuts
 - Quiet UI — secondary detail on hover / focus / touch
 - **Use my location** + **share** weather · remembers last city
-- Local time for the selected place · offline indicator
+- Local time · offline indicator · weather-tinted pins · favorite arcs
 
 ## Shortcuts
 
@@ -62,10 +71,18 @@ SPA note: if the host rewrites unknown paths, point them to `index.html` (defaul
 | `S` | Share weather |
 | `Esc` | Close / exit |
 
+## Release checklist
+
+1. Update [CHANGELOG.md](CHANGELOG.md) under `Unreleased` → new version section  
+2. Bump `package.json` `version`  
+3. `npm run ci`  
+4. Commit, tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`  
+5. Push branch + tags; `vercel --prod --yes` if needed  
+
 ## Design
 
-See [docs/design-next-phase.md](docs/design-next-phase.md) for the next-phase PR plan.
+See [docs/design-next-phase.md](docs/design-next-phase.md).
 
 ## Stack
 
-React 19 · Vite 8 · Three.js · three-globe · React Three Fiber · Tailwind 4
+React 19 · Vite 8 · Three.js · three-globe · React Three Fiber · Tailwind 4 · Vercel
