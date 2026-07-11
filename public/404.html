@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#030712" />
+    <meta name="robots" content="noindex" />
+    <title>404 — Lost off the globe · Global View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background: #030712;
+        color: #eef2ff;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        background:
+          radial-gradient(ellipse 100% 70% at 50% -10%, rgba(56, 140, 255, 0.2), transparent 55%),
+          radial-gradient(ellipse 45% 40% at 88% 75%, rgba(139, 92, 246, 0.14), transparent 50%),
+          linear-gradient(168deg, #0a1224 0%, #030712 45%, #0a1020 100%);
+      }
+      .card {
+        width: 100%;
+        max-width: 26rem;
+        text-align: center;
+        padding: 2.5rem 2rem;
+        border-radius: 1.5rem;
+        background:
+          linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, transparent 40%),
+          rgba(5, 8, 18, 0.65);
+        backdrop-filter: blur(28px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 20px 56px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      .code {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(56, 189, 248, 0.85);
+      }
+      h1 {
+        margin: 0.75rem 0 0;
+        font-size: clamp(2.4rem, 8vw, 3.25rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 0.95;
+        background: linear-gradient(135deg, #f0f9ff 0%, #7dd3fc 40%, #c4b5fd 75%, #fde68a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      p {
+        margin: 0.85rem 0 0;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .path {
+        margin-top: 0.85rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.35);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .actions {
+        margin-top: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        justify-content: center;
+      }
+      a.primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.75rem;
+        padding: 0 1.5rem;
+        border-radius: 999px;
+        background: #fff;
+        color: #030712;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(255, 255, 255, 0.08);
+      }
+      a.primary:hover {
+        transform: scale(1.02);
+      }
+      button.ghost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.75rem;
+        padding: 0 1.5rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 16, 32, 0.7);
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      button.ghost:hover {
+        color: #fff;
+      }
+      .brand {
+        margin-top: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.25);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="code">404</div>
+      <h1>Lost off the globe</h1>
+      <p>This path isn’t on the map. Head back to Global View and pick a city.</p>
+      <div class="path" id="path" hidden></div>
+      <div class="actions">
+        <a class="primary" href="/">Back to globe</a>
+        <button class="ghost" type="button" onclick="history.back()">Go back</button>
+      </div>
+      <p class="brand">Global View</p>
+    </main>
+    <script>
+      try {
+        var el = document.getElementById('path')
+        var p = location.pathname + location.search
+        if (p && p !== '/') {
+          el.hidden = false
+          el.textContent = p
+        }
+      } catch (e) {}
+    </script>
+  </body>
+</html>
