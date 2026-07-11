@@ -136,7 +136,9 @@ export default function StatsPanel({
           </button>
         </div>
 
-        <p className={`mt-3 text-[10px] ${mute}`}>{t('now')}</p>
+        <p className={`mt-3 text-[10px] ${mute}`}>
+          {weather?.isMoon && weather?.phase ? weather.phase : t('now')}
+        </p>
 
         {error && !c ? (
           <div className="mt-1 text-right">

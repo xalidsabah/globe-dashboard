@@ -15,6 +15,7 @@ import {
   QUICK_CITIES,
 } from './lib/weather'
 import { capitalForCountry, isCapitalPlace } from './lib/capitals'
+import { isMoonPlace, buildMoonWeather, moonOutdoorTip } from './lib/moon'
 import {
   loadFavorites,
   toggleFavorite as toggleFavoriteStore,
@@ -147,11 +148,25 @@ export default function App() {
 
   const loadWeather = useCallback(
     async (p, { silent } = {}) => {
-      if (!p?.lat) return
+      if (p?.lat == null && !isMoonPlace(p)) return
       setLoading(true)
       setWeatherError(false)
       const t0 = performance.now()
       try {
+        // #cool_weather_thing — lunar weather is modeled (NASA-style ranges)
+        if (isMoonPlace(p)) {
+          const data = buildMoonWeather()
+          setWeather(data)
+          setWeatherError(false)
+          setLiveMs(Math.round(performance.now() - t0))
+          setCapitalSnap(null)
+          if (!silent) {
+            const deg = data.current?.temp != null ? Math.round(data.current.temp) : '—'
+            showToast(t('toast_moon', { temp: deg, phase: data.phase || '' }))
+          }
+          return
+        }
+
         const data = await fetchWeatherBundle(p.lat, p.lng, p.timezone || 'auto')
         setWeather(data)
         setWeatherError(false)
@@ -184,10 +199,10 @@ export default function App() {
     [showToast, t]
   )
 
-  const outdoor = useMemo(
-    () => bestOutdoorWindow(weather?.hourly, weather?.timezone),
-    [weather]
-  )
+  const outdoor = useMemo(() => {
+    if (weather?.isMoon) return moonOutdoorTip()
+    return bestOutdoorWindow(weather?.hourly, weather?.timezone)
+  }, [weather])
 
   useEffect(() => {
     const fromUrl = placeFromSearch()
@@ -215,6 +230,10 @@ export default function App() {
 
   // When place changes, resolve country capital + load its weather for the pin
   useEffect(() => {
+    if (isMoonPlace(place)) {
+      setCapitalSnap(null)
+      return
+    }
     if (!place?.country && !place?.countryCode) {
       setCapitalSnap(null)
       return
@@ -696,11 +715,13 @@ export default function App() {
               resetToken={resetToken}
               dark={dark}
               focus={focus}
-              cities={citySnaps}
-              favorites={favorites}
-              capital={capitalForGlobe}
+              cities={isMoonPlace(place) ? [] : citySnaps}
+              favorites={isMoonPlace(place) ? [] : favorites}
+              capital={isMoonPlace(place) ? null : capitalForGlobe}
               unit={unit}
               quality={quality}
+              body={isMoonPlace(place) ? 'moon' : 'earth'}
+              moonPhase={weather?.phaseFraction}
               onSelectCity={(city) => selectPlace(city, { openHourly: true })}
             />
           </Suspense>

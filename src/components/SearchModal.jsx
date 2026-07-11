@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { searchPlaces, QUICK_CITIES } from '../lib/weather'
+import { MOON_PLACE, matchMoonQuery } from '../lib/moon'
 import {
   loadRecent,
   pushRecent,
@@ -19,6 +20,7 @@ const GROUP_LABEL_KEY = {
   favorite: 'favorites',
   recent: 'recent',
   popular: 'popularCities',
+  special: 'specialPlaces',
   result: null,
 }
 
@@ -29,6 +31,9 @@ function toItem(c, group) {
 }
 
 function avatarTone(group, dark) {
+  if (group === 'special' || group === 'moon') {
+    return dark ? 'bg-amber-300/15 text-amber-100' : 'bg-slate-900 text-amber-200'
+  }
   if (group === 'favorite') {
     return dark ? 'bg-amber-400/15 text-amber-300' : 'bg-amber-50 text-amber-600'
   }
@@ -41,6 +46,7 @@ function avatarTone(group, dark) {
 }
 
 function avatarGlyph(r) {
+  if (r.group === 'special' || r.body === 'moon') return '☾'
   if (r.group === 'favorite') return '★'
   if (r.group === 'recent') return '⏱'
   return (r.name || '?')[0]
@@ -101,14 +107,29 @@ export default function SearchModal({
     setError(null)
     const t = window.setTimeout(async () => {
       try {
+        // #cool_weather_thing — surface The Moon before (or without) geocode hits
+        const specials = []
+        if (matchMoonQuery(q)) {
+          specials.push({
+            ...MOON_PLACE,
+            group: 'special',
+          })
+        }
         const list = await searchPlaces(q, 8)
         if (cancelled) return
-        setResults(list.map((r) => toItem(r, 'result')).filter(Boolean))
+        const geo = list.map((r) => toItem(r, 'result')).filter(Boolean)
+        setResults([...specials, ...geo])
         setActiveIdx(0)
       } catch {
         if (cancelled) return
-        setResults([])
-        setError(t('couldNotLoadWeather'))
+        // Still offer Moon if query matches even when geocode fails
+        if (matchMoonQuery(q)) {
+          setResults([{ ...MOON_PLACE, group: 'special' }])
+          setError(null)
+        } else {
+          setResults([])
+          setError(t('couldNotLoadWeather'))
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -152,7 +173,11 @@ export default function SearchModal({
   if (!open) return null
 
   const pick = (p) => {
-    const place = normalizePlace(p)
+    // Moon / specials already have coords + body flags
+    const place =
+      p?.body === 'moon' || p?.id === 'special-moon'
+        ? normalizePlace({ ...MOON_PLACE, ...p, body: 'moon', isSpecial: true })
+        : normalizePlace(p)
     if (!place) return
     setRecent(pushRecent(place))
     onSelect?.(place)

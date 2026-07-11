@@ -39,11 +39,14 @@ export default function GlobeScene({
   capital = null,
   unit,
   quality = 'high',
+  body = 'earth',
+  moonPhase = 0.5,
   onSelectCity,
 }) {
   const mobileDpr = useMobileDpr()
   const dpr = quality === 'low' ? [1, 1] : mobileDpr
   const pageVisible = usePageVisible()
+  const isMoon = body === 'moon'
 
   return (
     <Canvas
@@ -57,7 +60,10 @@ export default function GlobeScene({
       }}
       style={{ background: 'transparent' }}
     >
-      <color attach="background" args={[dark ? '#030712' : '#8eb0d0']} />
+      <color
+        attach="background"
+        args={[isMoon ? '#02040a' : dark ? '#030712' : '#8eb0d0']}
+      />
       <Suspense fallback={null}>
         <Globe
           zoom={zoom}
@@ -70,6 +76,8 @@ export default function GlobeScene({
           favorites={favorites}
           capital={capital}
           unit={unit}
+          body={body}
+          moonPhase={moonPhase}
           onSelectCity={onSelectCity}
         />
       </Suspense>

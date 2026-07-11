@@ -38,7 +38,7 @@ export function normalizePlace(city) {
     city.label ||
     [city.name, admin1, country].filter(Boolean).join(', ')
 
-  return {
+  const out = {
     id: city.id || `city-${city.name}-${lat.toFixed(2)},${lng.toFixed(2)}`,
     name: String(city.name).trim(),
     country,
@@ -48,6 +48,10 @@ export function normalizePlace(city) {
     timezone: city.timezone || 'auto',
     label,
   }
+  // Easter eggs / special bodies (Moon, …)
+  if (city.body) out.body = city.body
+  if (city.isSpecial) out.isSpecial = true
+  return out
 }
 
 function dedupeByKey(list) {
