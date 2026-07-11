@@ -72,7 +72,7 @@ export default function BottomPanel({
       style={{ paddingLeft: sidebarWide ? '11.5rem' : '4.25rem' }}
       aria-hidden={!open}
     >
-      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-2xl shadow-2xl">
+      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.35rem] shadow-2xl">
         <button
           type="button"
           onClick={onClose}

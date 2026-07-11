@@ -217,15 +217,18 @@ export default function SearchModal({
       />
 
       <div
-        className={`modal-enter relative w-full max-w-xl overflow-hidden rounded-3xl shadow-2xl ${
+        className={`modal-enter relative w-full max-w-xl overflow-hidden rounded-[1.5rem] shadow-2xl ${
           dark
-            ? 'border border-white/10 bg-[#0a1220]/95 backdrop-blur-2xl'
-            : 'border border-slate-200/90 bg-white/95 backdrop-blur-2xl'
+            ? 'border border-white/12 bg-[#060b16]/96 backdrop-blur-2xl'
+            : 'border border-slate-200/90 bg-white/97 backdrop-blur-2xl'
         }`}
       >
         <div
-          className="pointer-events-none absolute -top-24 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #38bdf8 0%, transparent 70%)' }}
+          className="pointer-events-none absolute -top-24 left-1/2 h-44 w-80 -translate-x-1/2 rounded-full opacity-45 blur-3xl"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(56,189,248,0.9) 0%, rgba(167,139,250,0.5) 45%, transparent 70%)',
+          }}
         />
 
         <div

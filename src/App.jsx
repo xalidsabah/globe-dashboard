@@ -629,7 +629,7 @@ export default function App() {
     try {
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', dark ? '#050a14' : '#9bb8d4')
+        ?.setAttribute('content', dark ? '#030712' : '#a8c4de')
     } catch {
       /* ignore */
     }
@@ -664,11 +664,11 @@ export default function App() {
         className={`stage-frame absolute overflow-hidden border transition-all duration-300 ${
           fullscreen
             ? 'is-fullscreen inset-0 rounded-none border-0'
-            : 'inset-2 rounded-2xl sm:inset-3 sm:rounded-[1.25rem]'
+            : 'inset-2 rounded-[1.35rem] sm:inset-3 sm:rounded-[1.5rem]'
         } ${
           dark
-            ? 'border-white/[0.08] bg-[#050a14]'
-            : 'border-slate-400/50 bg-[#9bb8d4]'
+            ? 'border-white/[0.08] bg-[#030712]'
+            : 'border-slate-400/40 bg-[#a8c4de]'
         }`}
       >
         {loading && <div className="top-progress" aria-hidden />}
@@ -891,10 +891,8 @@ export default function App() {
         {toast && (
           <div
             role="status"
-            className={`toast-enter pointer-events-none absolute bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-full border px-4 py-2 text-xs font-medium shadow-xl backdrop-blur-md ${
-              dark
-                ? 'border-white/12 bg-black/80 text-white/92'
-                : 'border-slate-200 bg-white text-slate-800 shadow-slate-300/40'
+            className={`toast-enter glass-pill pointer-events-none absolute bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-full px-5 py-2.5 text-xs font-semibold shadow-2xl ${
+              dark ? 'text-white/95' : 'text-slate-900'
             }`}
           >
             {toast}

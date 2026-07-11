@@ -46,21 +46,21 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`absolute left-0 top-0 bottom-0 z-20 flex ${width} flex-col border-r py-3 transition-[width] duration-300 ease-out ${
+      className={`absolute left-0 top-0 bottom-0 z-20 flex ${width} flex-col border-r py-3.5 transition-[width] duration-300 ease-out ${
         dark
-          ? 'border-white/[0.06] bg-[#060b16]/75 backdrop-blur-xl'
-          : 'border-slate-400/40 bg-white/95 backdrop-blur-xl shadow-sm'
+          ? 'border-white/[0.07] bg-[#040810]/70 backdrop-blur-2xl'
+          : 'border-slate-400/35 bg-white/90 backdrop-blur-2xl shadow-sm'
       }`}
       aria-label={t('menu')}
     >
-      <div className={`mb-5 flex items-center ${expanded ? 'px-3' : 'justify-center'}`}>
+      <div className={`mb-6 flex items-center ${expanded ? 'px-3' : 'justify-center'}`}>
         <button
           type="button"
           onClick={onToggleExpand}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-lg transition hover:scale-105 ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl shadow-lg transition hover:scale-105 active:scale-95 ${
             dark
-              ? 'bg-white text-[#0a1220] shadow-black/30'
-              : 'bg-slate-900 text-white shadow-slate-400/40'
+              ? 'bg-gradient-to-br from-white to-slate-200 text-[#030712] shadow-black/40'
+              : 'bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-slate-400/40'
           }`}
           title={expanded ? t('close') : t('menu')}
           aria-expanded={expanded}
@@ -104,23 +104,23 @@ export default function Sidebar({
               onClick={() => onNav?.(icon.id)}
               title={label}
               aria-current={active ? 'page' : undefined}
-              className={`relative flex h-10 items-center rounded-xl transition-all ${
+              className={`relative flex h-10 items-center rounded-2xl transition-all ${
                 expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
               } ${
                 active
                   ? dark
-                    ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/10 text-white shadow-[inset_0_0_0_1px_rgba(56,189,248,0.15)]'
+                    ? 'bg-gradient-to-r from-sky-500/25 to-violet-500/15 text-white shadow-[inset_0_0_0_1px_rgba(56,189,248,0.22)]'
                     : 'bg-slate-900 text-white shadow-md'
                   : dark
-                    ? 'text-white/40 hover:bg-white/5 hover:text-white/90'
+                    ? 'text-white/45 hover:bg-white/[0.06] hover:text-white'
                     : 'text-slate-700 hover:bg-slate-200/80 hover:text-slate-950'
               }`}
             >
               {active && (
                 <span
-                  className={`nav-active-dot absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full ${
-                    expanded ? '' : ''
-                  } ${dark ? 'bg-sky-400' : 'bg-sky-300'}`}
+                  className={`nav-active-dot absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full ${
+                    dark ? 'bg-sky-400' : 'bg-sky-300'
+                  }`}
                   aria-hidden
                 />
               )}

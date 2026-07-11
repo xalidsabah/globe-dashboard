@@ -92,13 +92,9 @@ export default function StatsPanel({
   return (
     <div className="pointer-events-none absolute right-3 top-[30%] z-20 flex -translate-y-1/2 flex-col items-end sm:right-5 fade-in">
       <div
-        className={`quiet-panel pointer-events-auto w-[168px] rounded-2xl border px-3.5 py-3 backdrop-blur-md sm:w-[180px] ${
+        className={`quiet-panel panel-float pointer-events-auto w-[176px] px-3.5 py-3.5 sm:w-[192px] ${
           forceOpen ? 'is-open' : ''
-        } ${
-          dark
-            ? 'border-white/[0.07] bg-black/40'
-            : 'border-slate-400/45 bg-white text-slate-900 shadow-md shadow-slate-500/20'
-        }`}
+        } ${dark ? '' : 'text-slate-900'}`}
       >
         {/* Primary header + temp */}
         <div className="flex items-center justify-between gap-2">
@@ -162,13 +158,13 @@ export default function StatsPanel({
         ) : (
           <div className="mt-0.5 flex items-start justify-end gap-0.5">
             <span
-              className={`text-[36px] font-medium leading-none tracking-tight tabular-nums ${main} ${
+              className={`text-display text-[40px] tabular-nums ${main} ${
                 refreshing ? 'opacity-50' : ''
               }`}
             >
               {temp(tVal, unit)}
             </span>
-            <span className={`mt-1 text-sm font-normal ${mute}`}>°{unit}</span>
+            <span className={`mt-1.5 text-sm font-semibold ${mute}`}>°{unit}</span>
           </div>
         )}
 

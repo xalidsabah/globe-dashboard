@@ -78,26 +78,30 @@ export default function LeftPromo({
 
       {/* Primary: place card — always visible */}
       <div
-        className={`pointer-events-auto mt-2 flex items-center gap-2 rounded-2xl border px-2.5 py-2 backdrop-blur-md ${
-          dark
-            ? 'border-white/[0.08] bg-black/40 text-white'
-            : 'border-slate-400/50 bg-white text-slate-900 shadow-md shadow-slate-400/25'
+        className={`panel-float pointer-events-auto mt-2 flex items-center gap-2.5 px-3 py-2.5 ${
+          dark ? 'text-white' : 'text-slate-900'
         }`}
       >
-        <span className={`shrink-0 ${dark ? 'text-sky-300/90' : 'text-sky-700'}`}>
-          <WeatherIcon icon={c?.icon || 'cloud'} size={24} isDay={c?.isDay !== false} />
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+            dark ? 'bg-sky-400/10 text-sky-300' : 'bg-sky-100 text-sky-700'
+          }`}
+        >
+          <WeatherIcon icon={c?.icon || 'cloud'} size={22} isDay={c?.isDay !== false} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium leading-tight">{place?.name || '—'}</p>
-          <p className={`truncate text-[10px] leading-tight ${mute}`}>
+          <p className="truncate text-[13px] font-bold leading-tight tracking-tight">
+            {place?.name || '—'}
+          </p>
+          <p className={`truncate text-[10px] font-medium leading-tight ${mute}`}>
             {c?.label || t('loading')}
             {localTime ? ` · ${localTime}` : ''}
             {aqiText ? ` · AQI ${aqiText}` : ''}
           </p>
         </div>
-        <p className="shrink-0 text-lg font-medium tabular-nums leading-none tracking-tight">
+        <p className="text-display shrink-0 text-[22px] tabular-nums">
           {display}
-          <span className="text-xs font-normal opacity-35">°</span>
+          <span className="text-xs font-semibold opacity-35">°</span>
         </p>
         {place && onToggleFavorite && (
           <StarButton size="sm" filled={isFavorite} dark={dark} onClick={onToggleFavorite} />

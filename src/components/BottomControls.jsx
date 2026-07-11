@@ -14,11 +14,15 @@ export default function BottomControls({
   onToggleFullscreen,
 }) {
   const { t } = useI18n()
-  const active = dark ? 'bg-white text-[#0a1220] shadow-md' : 'bg-slate-900 text-white shadow-md'
-  const idle = dark ? 'text-white/55 hover:text-white' : 'text-slate-800 hover:text-slate-950 font-medium'
+  const active = dark
+    ? 'bg-white text-[#030712] shadow-lg shadow-white/10'
+    : 'bg-slate-900 text-white shadow-md'
+  const idle = dark
+    ? 'text-white/55 hover:text-white'
+    : 'text-slate-800 hover:text-slate-950 font-semibold'
   const round = dark
-    ? 'h-8 w-8 border border-white/10 bg-[#0c1424]/80 text-white/75 hover:bg-white/10 hover:text-white'
-    : 'h-8 w-8 border border-slate-400/60 bg-white text-slate-900 shadow-md shadow-slate-400/20 hover:bg-slate-50'
+    ? 'h-9 w-9 border border-white/12 bg-[#080e1c]/75 text-white/80 hover:bg-white/10 hover:text-white backdrop-blur-xl'
+    : 'h-9 w-9 border border-slate-400/50 bg-white text-slate-900 shadow-md shadow-slate-400/20 hover:bg-slate-50'
 
   const lift =
     panelOpen && !fullscreen
@@ -30,11 +34,11 @@ export default function BottomControls({
       <div
         className={`pointer-events-none absolute left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2 transition-all duration-300 ${lift}`}
       >
-        <div className="pointer-events-auto glass-pill flex h-9 items-center gap-0.5 rounded-full p-1 shadow-lg">
+        <div className="pointer-events-auto glass-pill flex h-10 items-center gap-0.5 rounded-full p-1 shadow-xl">
           <button
             type="button"
             onClick={() => onModeChange('3d')}
-            className={`flex h-7 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition ${
+            className={`flex h-8 items-center gap-1.5 rounded-full px-4 text-xs font-bold tracking-tight transition ${
               mode === '3d' ? active : idle
             }`}
             aria-pressed={mode === '3d'}
@@ -52,7 +56,7 @@ export default function BottomControls({
           <button
             type="button"
             onClick={() => onModeChange('2d')}
-            className={`flex h-7 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition ${
+            className={`flex h-8 items-center gap-1.5 rounded-full px-4 text-xs font-bold tracking-tight transition ${
               mode === '2d' ? active : idle
             }`}
             aria-pressed={mode === '2d'}

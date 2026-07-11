@@ -254,18 +254,18 @@ function CityPin({ city, active, dark, unit, onSelect, groupRef, emphasized }) {
       >
         {showLabel && (
           <span
-            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold shadow-lg backdrop-blur-md whitespace-nowrap ${
+            className={`city-pin-label flex items-center gap-1 border px-1.5 py-0.5 text-[9px] whitespace-nowrap backdrop-blur-md ${
               isCap || emphasized
                 ? dark
-                  ? 'border-amber-300/55 bg-slate-950/85 text-white shadow-amber-500/20'
-                  : 'border-amber-700/60 bg-white text-slate-950 shadow-md'
+                  ? 'border-amber-300/50 bg-slate-950/90 text-white shadow-amber-500/25'
+                  : 'border-amber-700/55 bg-white text-slate-950'
                 : active
                   ? dark
-                    ? 'border-amber-400/50 bg-amber-400/25 text-white'
-                    : 'border-amber-600/70 bg-amber-100 text-slate-950 shadow-md'
+                    ? 'border-sky-400/45 bg-sky-500/20 text-white'
+                    : 'border-sky-600/60 bg-sky-50 text-slate-950'
                   : dark
-                    ? 'border-white/20 bg-black/70 text-white/95 group-hover:border-sky-400/50'
-                    : 'border-slate-500/50 bg-white text-slate-950 group-hover:border-sky-600 shadow-md'
+                    ? 'border-white/18 bg-black/75 text-white/95 group-hover:border-sky-400/45'
+                    : 'border-slate-400/50 bg-white/95 text-slate-950 group-hover:border-sky-600'
             }`}
           >
             {(isCap || emphasized) && (
@@ -644,18 +644,19 @@ export default function Globe({
     <>
       {dark ? (
         <>
-          <ambientLight intensity={2.8} />
-          <directionalLight position={[10, 8, 12]} intensity={2.4} color="#ffffff" />
-          <directionalLight position={[-8, 3, -6]} intensity={1.2} color="#7aa8ff" />
-          <hemisphereLight args={['#c5d8ff', '#050a14', 1.3]} />
-          <pointLight position={[0, 0, 180]} intensity={0.9} color="#dce8ff" distance={600} />
+          <ambientLight intensity={2.6} />
+          <directionalLight position={[10, 8, 12]} intensity={2.55} color="#ffffff" />
+          <directionalLight position={[-8, 3, -6]} intensity={1.15} color="#8eb4ff" />
+          <directionalLight position={[0, -6, 4]} intensity={0.35} color="#a78bfa" />
+          <hemisphereLight args={['#c8dcff', '#030712', 1.25]} />
+          <pointLight position={[0, 0, 180]} intensity={1.05} color="#e0ecff" distance={600} />
         </>
       ) : (
         <>
-          <ambientLight intensity={1.8} />
-          <directionalLight position={[6, 10, 8]} intensity={3.2} color="#fff8f0" />
-          <directionalLight position={[-10, 3, -6]} intensity={0.9} color="#8eb6ff" />
-          <hemisphereLight args={['#e8f2ff', '#b8cce0', 1.1]} />
+          <ambientLight intensity={1.85} />
+          <directionalLight position={[6, 10, 8]} intensity={3.35} color="#fffaf5" />
+          <directionalLight position={[-10, 3, -6]} intensity={0.95} color="#93c5fd" />
+          <hemisphereLight args={['#eef6ff', '#b8cce0', 1.15]} />
         </>
       )}
 
