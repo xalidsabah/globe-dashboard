@@ -1,4 +1,5 @@
 /** Compact star toggle used in search + live city card */
+import { useI18n } from '../i18n/index.jsx'
 
 function StarIcon({ filled, size = 16 }) {
   return (
@@ -25,6 +26,7 @@ export default function StarButton({
   className = '',
   label,
 }) {
+  const { t } = useI18n()
   const dims = size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-9 w-9 rounded-xl'
   const icon = size === 'sm' ? 15 : 16
   const tone = filled
@@ -35,7 +37,7 @@ export default function StarButton({
       ? 'text-white/25 hover:bg-white/5 hover:text-amber-300'
       : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500'
 
-  const text = label || (filled ? 'Remove favorite' : 'Add favorite')
+  const text = label || (filled ? t('removeFavorite') : t('addFavorite'))
 
   return (
     <button

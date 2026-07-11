@@ -62,7 +62,7 @@ export default function Sidebar({
               ? 'bg-white text-[#0a1220] shadow-black/30'
               : 'bg-slate-900 text-white shadow-slate-400/40'
           }`}
-          title={expanded ? 'Collapse menu' : 'Expand menu'}
+          title={expanded ? t('close') : t('menu')}
           aria-expanded={expanded}
         >
           <svg

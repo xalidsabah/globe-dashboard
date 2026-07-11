@@ -50,7 +50,7 @@ export default function BottomPanel({
     riskStatus,
     factors,
     alerts,
-  } = evaluateConditions(weather, place)
+  } = evaluateConditions(weather, place, t)
 
   const riskTone =
     riskLabel === 'High'
@@ -79,7 +79,7 @@ export default function BottomPanel({
           className={`absolute left-1/2 top-2 z-10 flex h-5 w-14 -translate-x-1/2 items-center justify-center ${
             dark ? 'text-white/35 hover:text-white/70' : 'text-slate-400 hover:text-slate-700'
           }`}
-          aria-label="Collapse panel"
+          aria-label={t('close')}
         >
           <div
             className={`h-1 w-10 rounded-full transition ${

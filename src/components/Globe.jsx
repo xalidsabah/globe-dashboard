@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import ThreeGlobe from 'three-globe'
@@ -178,9 +178,23 @@ function EarthGlobe({ dark, points, arcs }) {
   return <primitive object={globeObj} />
 }
 
-function CityPin({ city, active, dark, unit, onSelect }) {
+function CityPin({ city, active, dark, unit, onSelect, groupRef }) {
   // Same math as three-globe points → pins sit on land
   const pos = polar2Cartesian(city.lat, city.lng, GLOBE_R * 1.02)
+  const { camera } = useThree()
+  const [front, setFront] = useState(true)
+  const world = useRef(new THREE.Vector3())
+
+  // Hide labels on the far side of the globe (behind Earth from the camera)
+  useFrame(() => {
+    if (!groupRef?.current) return
+    world.current.copy(pos)
+    groupRef.current.localToWorld(world.current)
+    // Pin is on the front hemisphere if it faces roughly toward the camera
+    const facing = world.current.dot(camera.position) > 0
+    if (facing !== front) setFront(facing)
+  })
+
   const temp =
     city.temp == null
       ? null
@@ -188,14 +202,20 @@ function CityPin({ city, active, dark, unit, onSelect }) {
         ? Math.round((city.temp * 9) / 5 + 32)
         : Math.round(city.temp)
 
+  // Always keep the active selection pin; hide others when on the back face
+  if (!front && !active) return null
+
   return (
     <Html
       position={pos}
       center
       distanceFactor={155}
       zIndexRange={[15, 0]}
-      style={{ pointerEvents: 'auto', userSelect: 'none' }}
-      // hide labels when on the back of the globe
+      style={{
+        pointerEvents: front || active ? 'auto' : 'none',
+        userSelect: 'none',
+        opacity: front || active ? 1 : 0,
+      }}
       occlude={false}
     >
       <button
@@ -480,6 +500,7 @@ export default function Globe({
               dark={dark}
               unit={unit}
               onSelect={onSelectCity}
+              groupRef={groupRef}
             />
           )
         })}

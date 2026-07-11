@@ -1,6 +1,7 @@
 /**
  * Derived condition risk from Open-Meteo current / hourly / daily.
  * Not official government warnings — clear, actionable signals only.
+ * Pass `t` from i18n for localized titles/details.
  */
 
 import { formatHour, windDir } from './weather'
@@ -15,7 +16,6 @@ function clamp(n, lo = 0, hi = 100) {
   return Math.max(lo, Math.min(hi, Math.round(n)))
 }
 
-/** Next N hours from weather.hourly (already trimmed to upcoming) */
 function nextHours(hourly, n = 12) {
   return (hourly || []).slice(0, n)
 }
@@ -39,15 +39,20 @@ function highUvHours(hourly) {
   return { peak, count: hrs.length }
 }
 
+const identityT = (k, vars) => {
+  if (!vars) return k
+  return String(k).replace(/\{(\w+)\}/g, (_, x) => (vars[x] != null ? String(vars[x]) : `{${x}}`))
+}
+
 /**
  * @returns {{ riskScore, riskLabel, riskStatus, factors, alerts }}
  */
-export function evaluateConditions(weather, place) {
+export function evaluateConditions(weather, place, t = identityT) {
   const c = weather?.current
   const day0 = weather?.daily?.[0]
   const hourly = weather?.hourly || []
   const tz = weather?.timezone
-  const placeName = place?.name || 'Location'
+  const placeName = place?.name || t('location')
 
   if (!c && !day0) {
     return {
@@ -59,8 +64,8 @@ export function evaluateConditions(weather, place) {
         {
           id: 'empty',
           level: 'Low',
-          title: 'No location selected',
-          detail: 'Select a city to evaluate conditions',
+          title: t('alert_noLocation'),
+          detail: t('alert_selectCity'),
         },
       ],
     }
@@ -69,20 +74,16 @@ export function evaluateConditions(weather, place) {
   let score = 8
   const alerts = []
 
-  // —— Storm / severe weather code ——
   if (c?.group === 'storm' || day0?.group === 'storm') {
     score += 55
     alerts.push({
       id: 'storm',
       level: 'High',
-      title: `Thunderstorm risk — ${placeName}`,
-      detail: c?.label
-        ? `${c.label}. Stay aware of lightning and heavy rain.`
-        : 'Storm conditions possible in the forecast window.',
+      title: t('alert_storm', { place: placeName }),
+      detail: c?.label ? `${c.label}.` : t('alert_stormDetail'),
     })
   }
 
-  // —— Precipitation (today + next hours) ——
   const precipPeak = peakPrecipWindow(hourly)
   const dayPrecip = day0?.precipProb ?? 0
   const daySum = day0?.precipSum ?? 0
@@ -97,36 +98,34 @@ export function evaluateConditions(weather, place) {
 
   if (precipPeak && (precipPeak.precipProb || 0) >= 50) {
     const when = formatHour(precipPeak.time, tz)
+    const mm =
+      precipPeak.precip != null ? ` · ~${precipPeak.precip.toFixed(1)} mm` : ''
+    const dayBit = daySum ? ` · ${daySum} mm` : ''
     alerts.push({
       id: 'precip-window',
       level: precipPeak.precipProb >= 75 ? 'High' : 'Medium',
-      title: 'Precipitation window',
-      detail: `${Math.round(precipPeak.precipProb)}% chance around ${when}${
-        precipPeak.precip != null ? ` · ~${precipPeak.precip.toFixed(1)} mm` : ''
-      }${daySum ? ` · ${daySum} mm today` : ''}`,
+      title: t('alert_precipWindow'),
+      detail: `${Math.round(precipPeak.precipProb)}% · ${when}${mm}${dayBit}`,
     })
   } else if (dayPrecip >= 40) {
     alerts.push({
       id: 'precip-day',
       level: dayPrecip >= 70 ? 'High' : 'Medium',
-      title: 'Precipitation',
-      detail: `${Math.round(dayPrecip)}% chance today${
-        daySum != null ? ` · ${daySum} mm` : ''
-      }`,
+      title: t('alert_precip'),
+      detail: `${Math.round(dayPrecip)}%${daySum != null ? ` · ${daySum} mm` : ''}`,
     })
   } else {
     alerts.push({
       id: 'precip-day',
       level: 'Low',
-      title: 'Precipitation',
+      title: t('alert_precip'),
       detail:
         dayPrecip != null
-          ? `${Math.round(dayPrecip)}% chance · ${daySum ?? 0} mm today`
-          : 'Low chance of measurable rain',
+          ? `${Math.round(dayPrecip)}% · ${daySum ?? 0} mm`
+          : t('alert_precipLow'),
     })
   }
 
-  // —— Wind / gusts ——
   const wind = c?.wind || 0
   const gust = c?.windGust ?? day0?.gustMax ?? 0
   const windPeak = Math.max(wind, gust, day0?.windMax || 0)
@@ -137,18 +136,18 @@ export function evaluateConditions(weather, place) {
     alerts.push({
       id: 'wind',
       level: 'High',
-      title: 'Strong wind',
-      detail: `Gusts up to ${Math.round(gust || windPeak)} km/h${
+      title: t('alert_strongWind'),
+      detail: `${Math.round(gust || windPeak)} km/h${
         c?.windDeg != null ? ` ${windDir(c.windDeg)}` : ''
-      }. Secure loose items outdoors.`,
+      }`,
     })
   } else if (windPeak >= 45) {
     score += 16
     alerts.push({
       id: 'wind',
       level: 'Medium',
-      title: 'Elevated wind',
-      detail: `Sustained ~${Math.round(wind)} km/h · gusts ${Math.round(gust || windPeak)} km/h${
+      title: t('alert_elevatedWind'),
+      detail: `${Math.round(wind)} km/h · ${Math.round(gust || windPeak)} km/h${
         c?.windDeg != null ? ` ${windDir(c.windDeg)}` : ''
       }`,
     })
@@ -156,17 +155,16 @@ export function evaluateConditions(weather, place) {
     alerts.push({
       id: 'wind',
       level: 'Low',
-      title: 'Wind',
+      title: t('alert_wind'),
       detail:
         wind != null
-          ? `Sustained ${Math.round(wind)} km/h${
-              gust ? ` · gusts ${Math.round(gust)} km/h` : ''
-            }${c?.windDeg != null ? ` ${windDir(c.windDeg)}` : ''}`
+          ? `${Math.round(wind)} km/h${gust ? ` · ${Math.round(gust)}` : ''}${
+              c?.windDeg != null ? ` ${windDir(c.windDeg)}` : ''
+            }`
           : '—',
     })
   }
 
-  // —— UV ——
   const uvMax = c?.uv ?? day0?.uvMax ?? 0
   const uvInfo = highUvHours(hourly)
   let uvFactor = clamp((uvMax || 0) * 10)
@@ -176,31 +174,30 @@ export function evaluateConditions(weather, place) {
     alerts.push({
       id: 'uv',
       level: uvMax >= 10 ? 'High' : 'Medium',
-      title: 'High UV',
-      detail: `Max UV ${Number(uvMax).toFixed(1)} today${
-        uvInfo?.peak ? ` · peak near ${formatHour(uvInfo.peak.time, tz)}` : ''
-      }. Sun protection recommended.`,
+      title: t('alert_highUv'),
+      detail: `UV ${Number(uvMax).toFixed(1)}${
+        uvInfo?.peak ? ` · ${formatHour(uvInfo.peak.time, tz)}` : ''
+      }`,
     })
   } else if (uvMax >= 6) {
     score += 8
     alerts.push({
       id: 'uv',
       level: 'Medium',
-      title: 'UV index',
-      detail: `Max UV ${Number(uvMax).toFixed(1)}${
-        uvInfo?.peak ? ` · higher around ${formatHour(uvInfo.peak.time, tz)}` : ''
+      title: t('alert_uv'),
+      detail: `UV ${Number(uvMax).toFixed(1)}${
+        uvInfo?.peak ? ` · ${formatHour(uvInfo.peak.time, tz)}` : ''
       }`,
     })
   } else {
     alerts.push({
       id: 'uv',
       level: 'Low',
-      title: 'UV index',
-      detail: uvMax != null ? `Max UV ${Number(uvMax).toFixed(1)} today` : '—',
+      title: t('alert_uv'),
+      detail: uvMax != null ? `UV ${Number(uvMax).toFixed(1)}` : '—',
     })
   }
 
-  // —— Freeze / heat ——
   let extremeFactor = 0
   const tMin = day0?.tMin
   const tMax = day0?.tMax
@@ -210,8 +207,8 @@ export function evaluateConditions(weather, place) {
     alerts.push({
       id: 'freeze',
       level: tMin <= -5 ? 'High' : 'Medium',
-      title: 'Freeze risk',
-      detail: `Overnight low ${Math.round(tMin)}°C. Watch for ice on roads and sidewalks.`,
+      title: t('alert_freeze'),
+      detail: `${Math.round(tMin)}°C`,
     })
   }
   if (tMax != null && tMax >= 35) {
@@ -220,49 +217,47 @@ export function evaluateConditions(weather, place) {
     alerts.push({
       id: 'heat',
       level: tMax >= 38 ? 'High' : 'Medium',
-      title: 'Heat',
-      detail: `High ${Math.round(tMax)}°C. Limit midday exposure and hydrate.`,
+      title: t('alert_heat'),
+      detail: `${Math.round(tMax)}°C`,
     })
   }
 
-  // —— Fog ——
   if (c?.group === 'fog') {
     score += 12
     alerts.push({
       id: 'fog',
       level: 'Medium',
-      title: 'Fog / low visibility',
-      detail: c.label || 'Reduced visibility — drive carefully.',
+      title: t('alert_fog'),
+      detail: c.label || t('alert_fogDetail'),
     })
   }
 
-  // —— Air quality ——
   const air = weather?.air
   if (air?.aqi != null) {
     const aqi = Number(air.aqi)
+    const aqiWord = air.labelKey ? t(air.labelKey) : air.label || ''
     if (aqi > 60) {
       score += aqi > 80 ? 18 : 10
       alerts.push({
         id: 'aqi',
         level: aqi > 80 ? 'High' : 'Medium',
-        title: 'Air quality',
-        detail: `AQI ${Math.round(aqi)} · ${air.label || 'Elevated'}${
-          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)} µg/m³` : ''
-        }. Limit outdoor exertion if sensitive.`,
+        title: t('alert_aqi'),
+        detail: `AQI ${Math.round(aqi)} · ${aqiWord}${
+          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)}` : ''
+        }`,
       })
     } else {
       alerts.push({
         id: 'aqi',
         level: 'Low',
-        title: 'Air quality',
-        detail: `AQI ${Math.round(aqi)} · ${air.label || 'OK'}${
-          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)} µg/m³` : ''
+        title: t('alert_aqi'),
+        detail: `AQI ${Math.round(aqi)} · ${aqiWord}${
+          air.pm25 != null ? ` · PM2.5 ${Math.round(air.pm25)}` : ''
         }`,
       })
     }
   }
 
-  // —— Current summary (always first-ish) ——
   alerts.unshift({
     id: 'conditions',
     level: levelFromScore(
@@ -270,13 +265,12 @@ export function evaluateConditions(weather, place) {
     ),
     title: c ? `${c.label} — ${placeName}` : placeName,
     detail: c
-      ? `Wind ${Math.round(c.wind || 0)} km/h ${windDir(c.windDeg)} · Humidity ${Math.round(
+      ? `${Math.round(c.wind || 0)} km/h ${windDir(c.windDeg)} · ${Math.round(
           c.humidity || 0
-        )}% · Pressure ${Math.round(c.pressure || 0)} hPa`
-      : 'Loading conditions…',
+        )}% · ${Math.round(c.pressure || 0)} hPa`
+      : t('alert_loading'),
   })
 
-  // Deduplicate by id keeping first
   const seen = new Set()
   const unique = []
   for (const a of alerts) {

@@ -227,7 +227,7 @@ export default function TopBar({
                 type="button"
                 className="fixed inset-0 z-[60]"
                 onClick={onCloseUserMenu}
-                aria-label="Close menu"
+                aria-label={t('close')}
               />
               <div
                 role="menu"

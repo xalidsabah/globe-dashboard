@@ -230,25 +230,19 @@ export default function SettingsModal({
 }
 
 function Toggle({ on, onClick, dark }) {
+  // dir=ltr keeps ON = knob to the right in all languages (avoids RTL flip + overflow)
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
       onClick={onClick}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-        on
-          ? 'bg-sky-500'
-          : dark
-            ? 'bg-white/12'
-            : 'bg-slate-200'
-      }`}
+      dir="ltr"
+      className={`relative inline-flex h-7 w-11 shrink-0 items-center rounded-full p-0.5 transition ${
+        on ? 'bg-sky-500' : dark ? 'bg-white/12' : 'bg-slate-200'
+      } ${on ? 'justify-end' : 'justify-start'}`}
     >
-      <span
-        className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-          on ? 'translate-x-5' : 'translate-x-0.5'
-        }`}
-      />
+      <span className="pointer-events-none h-6 w-6 shrink-0 rounded-full bg-white shadow" />
     </button>
   )
 }

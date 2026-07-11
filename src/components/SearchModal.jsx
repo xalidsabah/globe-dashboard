@@ -108,7 +108,7 @@ export default function SearchModal({
       } catch {
         if (cancelled) return
         setResults([])
-        setError('Search failed — check your connection')
+        setError(t('couldNotLoadWeather'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -207,13 +207,13 @@ export default function SearchModal({
       className="absolute inset-0 z-[80] flex items-start justify-center px-4 pt-[8vh] sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"
-      aria-label="Search cities"
+      aria-label={t('searchCities')}
     >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-        aria-label="Close search"
+        aria-label={t('close')}
       />
 
       <div
@@ -286,7 +286,7 @@ export default function SearchModal({
                 ? 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
-            aria-label="Close"
+            aria-label={t('close')}
           >
             ✕
           </button>
@@ -296,7 +296,7 @@ export default function SearchModal({
           ref={listRef}
           id={listId}
           role="listbox"
-          aria-label="Cities"
+          aria-label={t('search')}
           className="relative max-h-[min(56vh,420px)] overflow-y-auto panel-scroll py-2"
         >
           {error && (
