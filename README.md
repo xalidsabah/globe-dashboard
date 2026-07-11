@@ -2,6 +2,8 @@
 
 Live global weather on a 3D Earth — powered by [Open-Meteo](https://open-meteo.com/) (no API key).
 
+**Live:** [https://globe-dashboard-eight.vercel.app](https://globe-dashboard-eight.vercel.app)
+
 ## Run
 
 ```bash
