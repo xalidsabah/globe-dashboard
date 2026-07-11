@@ -15,6 +15,7 @@ export default function TopBar({
   onOpenSearch,
   onLocate,
   onShare,
+  onOpenHelp,
   locating = false,
   online = true,
   sidebarWide = false,
@@ -132,6 +133,18 @@ export default function TopBar({
                 strokeLinecap="round"
               />
             </svg>
+          </button>
+        )}
+
+        {onOpenHelp && (
+          <button
+            type="button"
+            onClick={onOpenHelp}
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+            className={`${pillBtn} hidden w-7 md:flex`}
+          >
+            <span className="text-[11px] font-semibold opacity-80">?</span>
           </button>
         )}
       </div>

@@ -8,6 +8,10 @@ export default function SettingsModal({
   onToggleAutoRotate,
   autoRefresh,
   onToggleAutoRefresh,
+  autoTheme = false,
+  onToggleAutoTheme,
+  quality = 'high',
+  onToggleQuality,
 }) {
   if (!open) return null
 
@@ -37,6 +41,41 @@ export default function SettingsModal({
               }`}
             >
               °{u}
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'autoTheme',
+      icon: '◐',
+      label: 'Match day / night',
+      hint: autoTheme ? 'Theme follows local sunlight' : 'Manual theme only',
+      control: <Toggle on={autoTheme} onClick={onToggleAutoTheme} dark={dark} />,
+    },
+    {
+      id: 'quality',
+      icon: '◈',
+      label: 'Globe quality',
+      hint: quality === 'high' ? 'Sharper · more GPU' : 'Smoother on phones',
+      control: (
+        <div className={`flex rounded-full p-0.5 ${dark ? 'bg-white/8' : 'bg-slate-100'}`}>
+          {['high', 'low'].map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => quality !== q && onToggleQuality?.()}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition ${
+                quality === q
+                  ? dark
+                    ? 'bg-white text-slate-900 shadow'
+                    : 'bg-slate-900 text-white shadow'
+                  : dark
+                    ? 'text-white/45 hover:text-white/80'
+                    : 'text-slate-500'
+              }`}
+            >
+              {q}
             </button>
           ))}
         </div>

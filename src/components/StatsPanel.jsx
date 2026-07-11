@@ -1,5 +1,5 @@
 import WeatherIcon from './WeatherIcon'
-import { windDir } from '../lib/weather'
+import { windDir, formatTime } from '../lib/weather'
 import useQuietExpand from '../hooks/useQuietExpand'
 
 function temp(c, unit) {
@@ -50,6 +50,7 @@ export default function StatsPanel({
   const hi = temps.length ? Math.max(...temps) : 1
   const span = Math.max(0.5, hi - lo)
 
+  const tz = weather?.timezone
   const metrics = [
     {
       label: 'Humidity',
@@ -75,6 +76,13 @@ export default function StatsPanel({
           ? `${Math.round(air.aqi)} ${air.label || ''}`.trim()
           : '—',
       tone: air?.tone,
+    },
+    {
+      label: 'Sun',
+      value:
+        day?.sunrise && day?.sunset
+          ? `${formatTime(day.sunrise, tz)} – ${formatTime(day.sunset, tz)}`
+          : '—',
     },
   ]
 

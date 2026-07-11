@@ -37,6 +37,10 @@ First public release — live on Vercel.
 - Air quality (European AQI + PM2.5) via Open-Meteo Air Quality API
 - “Best outdoors” window from next 12 hours (stats + left panel)
 - Pause WebGL render loop when the tab is hidden
+- Shareable deep links (`?lat=&lng=&name=`) — URL follows selected city
+- Shortcuts help (`?` key)
+- Settings: match day/night theme · globe quality high/low
+- Sunrise / sunset in stats metrics
 
 ### Planned
 - Optional custom domain

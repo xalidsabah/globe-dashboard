@@ -1,0 +1,64 @@
+/** Shareable place deep links: ?lat=&lng=&name=&tz= */
+
+import { normalizePlace } from './places'
+
+export function placeFromSearch(search = typeof window !== 'undefined' ? window.location.search : '') {
+  try {
+    const q = new URLSearchParams(search.startsWith('?') ? search : `?${search}`)
+    const lat = Number(q.get('lat'))
+    const lng = Number(q.get('lng'))
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null
+    const name = (q.get('name') || 'Location').trim() || 'Location'
+    const country = (q.get('country') || '').trim()
+    const timezone = (q.get('tz') || 'auto').trim() || 'auto'
+    return normalizePlace({
+      id: `url-${lat.toFixed(3)},${lng.toFixed(3)}`,
+      name,
+      country,
+      lat,
+      lng,
+      timezone,
+      label: country ? `${name}, ${country}` : name,
+    })
+  } catch {
+    return null
+  }
+}
+
+export function writePlaceToUrl(place, { replace = true } = {}) {
+  if (typeof window === 'undefined') return
+  if (place?.lat == null || place?.lng == null) return
+  try {
+    const url = new URL(window.location.href)
+    url.searchParams.set('lat', Number(place.lat).toFixed(4))
+    url.searchParams.set('lng', Number(place.lng).toFixed(4))
+    url.searchParams.set('name', place.name || 'Location')
+    if (place.country) url.searchParams.set('country', place.country)
+    else url.searchParams.delete('country')
+    if (place.timezone && place.timezone !== 'auto') url.searchParams.set('tz', place.timezone)
+    else url.searchParams.delete('tz')
+    const next = `${url.pathname}${url.search}${url.hash}`
+    if (replace) window.history.replaceState({}, '', next)
+    else window.history.pushState({}, '', next)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function placeShareUrl(place) {
+  if (typeof window === 'undefined' || place?.lat == null || place?.lng == null) {
+    return typeof window !== 'undefined' ? window.location.href : ''
+  }
+  try {
+    const url = new URL(window.location.origin + window.location.pathname)
+    url.searchParams.set('lat', Number(place.lat).toFixed(4))
+    url.searchParams.set('lng', Number(place.lng).toFixed(4))
+    url.searchParams.set('name', place.name || 'Location')
+    if (place.country) url.searchParams.set('country', place.country)
+    if (place.timezone && place.timezone !== 'auto') url.searchParams.set('tz', place.timezone)
+    return url.toString()
+  } catch {
+    return window.location.href
+  }
+}

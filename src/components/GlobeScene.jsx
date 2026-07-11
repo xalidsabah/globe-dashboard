@@ -37,9 +37,11 @@ export default function GlobeScene({
   cities,
   favorites,
   unit,
+  quality = 'high',
   onSelectCity,
 }) {
-  const dpr = useMobileDpr()
+  const mobileDpr = useMobileDpr()
+  const dpr = quality === 'low' ? [1, 1] : mobileDpr
   const pageVisible = usePageVisible()
 
   return (
@@ -47,7 +49,11 @@ export default function GlobeScene({
       camera={{ position: [0, 40, 240], fov: 45, near: 1, far: 2000 }}
       dpr={dpr}
       frameloop={pageVisible ? 'always' : 'demand'}
-      gl={{ antialias: !dpr || dpr[1] > 1.3, alpha: true, powerPreference: 'high-performance' }}
+      gl={{
+        antialias: quality === 'high' && (!dpr || dpr[1] > 1.2),
+        alpha: true,
+        powerPreference: 'high-performance',
+      }}
       style={{ background: 'transparent' }}
     >
       <color attach="background" args={[dark ? '#050a14' : '#7fa8cc']} />

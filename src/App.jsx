@@ -26,6 +26,7 @@ import {
   FAVORITES_KEY,
   LAST_PLACE_KEY,
 } from './lib/places'
+import { placeFromSearch, writePlaceToUrl, placeShareUrl } from './lib/urlPlace'
 import useOnline from './hooks/useOnline'
 
 const loadGlobeScene = () => import('./components/GlobeScene')
@@ -33,6 +34,7 @@ const GlobeScene = lazy(loadGlobeScene)
 const SearchModal = lazy(() => import('./components/SearchModal'))
 const SettingsModal = lazy(() => import('./components/SettingsModal'))
 const HowItWorksModal = lazy(() => import('./components/HowItWorksModal'))
+const ShortcutsHelp = lazy(() => import('./components/ShortcutsHelp'))
 
 const DEFAULT_PLACE = {
   id: 'city-New York',
@@ -72,18 +74,21 @@ export default function App() {
   const prefs = loadPrefs()
   const online = useOnline()
   const [dark, setDark] = useState(prefs.dark !== false)
+  const [autoTheme, setAutoTheme] = useState(prefs.autoTheme === true)
+  const [quality, setQuality] = useState(prefs.quality === 'low' ? 'low' : 'high')
   const [mode, setMode] = useState('3d')
   const [zoom, setZoom] = useState(1)
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState('hourly')
   const [activeNav, setActiveNav] = useState('home')
   const [howOpen, setHowOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [resetToken, setResetToken] = useState(0)
   const [unit, setUnit] = useState(prefs.unit === 'F' ? 'F' : 'C')
-  const [place, setPlace] = useState(() => loadLastPlace() || DEFAULT_PLACE)
+  const [place, setPlace] = useState(() => placeFromSearch() || loadLastPlace() || DEFAULT_PLACE)
   const [weather, setWeather] = useState(null)
   const [loading, setLoading] = useState(false)
   const [locating, setLocating] = useState(false)
@@ -175,14 +180,36 @@ export default function App() {
   )
 
   useEffect(() => {
-    const start = loadLastPlace() || DEFAULT_PLACE
+    const fromUrl = placeFromSearch()
+    const start = fromUrl || loadLastPlace() || DEFAULT_PLACE
     setPlace(start)
+    writePlaceToUrl(start)
     loadWeather(start, { silent: true })
     fetchCitiesSnapshot(QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` })))
       .then(setCitySnaps)
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Deep link back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const p = placeFromSearch()
+      if (!p) return
+      setPlace(p)
+      saveLastPlace(p)
+      loadWeather(p, { silent: true })
+      setResetToken((n) => n + 1)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [loadWeather])
+
+  // Auto theme from local is_day when enabled
+  useEffect(() => {
+    if (!autoTheme || weather?.current?.isDay == null) return
+    setDark(!weather.current.isDay)
+  }, [autoTheme, weather?.current?.isDay])
 
   // Keep favorite strip temps fresh
   useEffect(() => {
@@ -225,6 +252,7 @@ export default function App() {
       setPlace(placeObj)
       pushRecent(placeObj)
       saveLastPlace(placeObj)
+      writePlaceToUrl(placeObj)
       setZoom(1.08)
       setResetToken((n) => n + 1)
       setFullscreen(false)
@@ -306,8 +334,11 @@ export default function App() {
     setPlace(DEFAULT_PLACE)
     setUnit('C')
     setDark(true)
+    setAutoTheme(false)
+    setQuality('high')
     setAutoRotate(true)
     setAutoRefresh(true)
+    writePlaceToUrl(DEFAULT_PLACE)
     loadWeather(DEFAULT_PLACE, { silent: true })
     showToast('Local data cleared')
   }, [loadWeather, showToast])
@@ -321,11 +352,13 @@ export default function App() {
           : Math.round(weather.current.temp)
         : null
     const label = weather?.current?.label || ''
+    const link = placeShareUrl(place)
     const text = [
       place.label || place.name,
       temp != null ? `${temp}°${unit}` : null,
       label,
-      typeof window !== 'undefined' ? window.location.href : '',
+      weather?.air?.label ? `AQI ${weather.air.label}` : null,
+      link,
     ]
       .filter(Boolean)
       .join(' · ')
@@ -335,18 +368,18 @@ export default function App() {
         await navigator.share({
           title: `${place.name} weather`,
           text,
-          url: window.location.href,
+          url: link,
         })
         showToast('Shared')
       } else {
         await navigator.clipboard.writeText(text)
-        showToast('Copied to clipboard')
+        showToast('Link copied')
       }
     } catch (e) {
       if (e?.name === 'AbortError') return
       try {
         await navigator.clipboard.writeText(text)
-        showToast('Copied to clipboard')
+        showToast('Link copied')
       } catch {
         showToast('Could not share')
       }
@@ -416,7 +449,8 @@ export default function App() {
       const tag = document.activeElement?.tagName
       const typing = tag === 'INPUT' || tag === 'TEXTAREA'
       if (e.key === 'Escape') {
-        if (searchOpen) setSearchOpen(false)
+        if (helpOpen) setHelpOpen(false)
+        else if (searchOpen) setSearchOpen(false)
         else if (settingsOpen) setSettingsOpen(false)
         else if (howOpen) setHowOpen(false)
         else if (userMenuOpen) setUserMenuOpen(false)
@@ -429,6 +463,11 @@ export default function App() {
         return
       }
       if (typing) return
+      if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+        e.preventDefault()
+        setHelpOpen(true)
+        return
+      }
       if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
         e.preventDefault()
         setPanelOpen(false)
@@ -460,6 +499,7 @@ export default function App() {
     searchOpen,
     settingsOpen,
     howOpen,
+    helpOpen,
     userMenuOpen,
     panelOpen,
     locateMe,
@@ -473,8 +513,22 @@ export default function App() {
   }
 
   const setDarkPersist = (d) => {
+    setAutoTheme(false)
+    savePrefs({ dark: d, autoTheme: false })
     setDark(d)
-    savePrefs({ dark: d })
+  }
+
+  const setAutoThemePersist = (on) => {
+    setAutoTheme(on)
+    savePrefs({ autoTheme: on })
+    if (on && weather?.current?.isDay != null) {
+      setDark(!weather.current.isDay)
+    }
+  }
+
+  const setQualityPersist = (q) => {
+    setQuality(q)
+    savePrefs({ quality: q })
   }
 
   useEffect(() => {
@@ -520,6 +574,7 @@ export default function App() {
               cities={citySnaps}
               favorites={favorites}
               unit={unit}
+              quality={quality}
               onSelectCity={(city) => selectPlace(city, { openHourly: true })}
             />
           </Suspense>
@@ -552,6 +607,7 @@ export default function App() {
               setDarkPersist(!dark)
               showToast(!dark ? 'Dark theme' : 'Light theme')
             }}
+            onOpenHelp={() => setHelpOpen(true)}
             latency={liveMs}
             placeName={place?.name}
             userMenuOpen={userMenuOpen}
@@ -699,7 +755,14 @@ export default function App() {
                   return !v
                 })
               }}
+              autoTheme={autoTheme}
+              onToggleAutoTheme={() => setAutoThemePersist(!autoTheme)}
+              quality={quality}
+              onToggleQuality={() => setQualityPersist(quality === 'high' ? 'low' : 'high')}
             />
+          )}
+          {helpOpen && (
+            <ShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} dark={dark} />
           )}
         </Suspense>
 

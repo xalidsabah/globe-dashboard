@@ -54,6 +54,8 @@ Works on desktop and mobile. Dark and light themes. Saves your favorites on this
 | **Alerts** | Derived risk: precip windows, UV, wind, freeze/heat, air quality |
 | **Air quality** | European AQI + PM2.5 from Open-Meteo |
 | **Outdoors** | Suggested best window in the next ~12 hours |
+| **Share links** | URL updates with the city so links open the same place |
+| **Auto day/night** | Optional theme that follows local sunlight |
 | **Favorites** | Star cities · quick switch · soft arcs on the globe |
 | **Share** | Share or copy current conditions |
 | **Units & theme** | °C / °F · light / dark · remembers your prefs |
@@ -81,6 +83,7 @@ Everything is stored **locally** in your browser (favorites, last city, settings
 | `F` | Fullscreen |
 | `L` | Use my location |
 | `S` | Share weather |
+| `?` | Keyboard shortcuts help |
 | `Esc` | Close panels / exit fullscreen |
 
 ---
