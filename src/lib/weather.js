@@ -104,6 +104,64 @@ export async function searchPlaces(query, count = 6) {
   }))
 }
 
+/** Reverse geocode lat/lng → place (Open-Meteo) */
+export async function reverseGeocode(lat, lng) {
+  const url = new URL('https://geocoding-api.open-meteo.com/v1/reverse')
+  url.searchParams.set('latitude', String(lat))
+  url.searchParams.set('longitude', String(lng))
+  url.searchParams.set('language', 'en')
+  url.searchParams.set('format', 'json')
+  url.searchParams.set('count', '1')
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Reverse geocoding failed')
+  const data = await res.json()
+  const r = data.results?.[0]
+  if (!r) {
+    return {
+      id: `geo-${lat.toFixed(2)},${lng.toFixed(2)}`,
+      name: 'Your location',
+      admin1: '',
+      country: '',
+      lat,
+      lng,
+      timezone: 'auto',
+      label: `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`,
+    }
+  }
+  return {
+    id: `${r.id ?? r.latitude}-${r.longitude}`,
+    name: r.name || 'Your location',
+    admin1: r.admin1 || '',
+    country: r.country || '',
+    countryCode: r.country_code || '',
+    lat: r.latitude ?? lat,
+    lng: r.longitude ?? lng,
+    timezone: r.timezone || 'auto',
+    label: [r.name, r.admin1, r.country].filter(Boolean).join(', ') || 'Your location',
+  }
+}
+
+async function fetchWithRetry(url, { retries = 2, timeoutMs = 12000 } = {}) {
+  let lastErr
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+    try {
+      const res = await fetch(url, { signal: ctrl.signal })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res
+    } catch (e) {
+      clearTimeout(timer)
+      lastErr = e
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 400 * (attempt + 1)))
+      }
+    }
+  }
+  throw lastErr || new Error('Network failed')
+}
+
 export async function fetchWeather(lat, lng, timezone = 'auto') {
   const url = new URL(FORECAST)
   url.searchParams.set('latitude', String(lat))
@@ -165,8 +223,7 @@ export async function fetchWeather(lat, lng, timezone = 'auto') {
   url.searchParams.set('forecast_days', '7')
   url.searchParams.set('wind_speed_unit', 'kmh')
 
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Weather fetch failed')
+  const res = await fetchWithRetry(url)
   const data = await res.json()
   return normalizeWeather(data)
 }

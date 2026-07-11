@@ -2,6 +2,7 @@
 
 export const RECENT_KEY = 'wg-recent-cities'
 export const FAVORITES_KEY = 'wg-favorite-cities'
+export const LAST_PLACE_KEY = 'wg-last-place'
 
 const MAX_RECENT = 8
 const MAX_FAVORITES = 16
@@ -99,6 +100,24 @@ export function clearRecent() {
 
 export function loadFavorites() {
   return readList(FAVORITES_KEY).slice(0, MAX_FAVORITES)
+}
+
+export function loadLastPlace() {
+  try {
+    return normalizePlace(JSON.parse(localStorage.getItem(LAST_PLACE_KEY) || 'null'))
+  } catch {
+    return null
+  }
+}
+
+export function saveLastPlace(place) {
+  const p = normalizePlace(place)
+  if (!p) return
+  try {
+    localStorage.setItem(LAST_PLACE_KEY, JSON.stringify(p))
+  } catch {
+    /* ignore */
+  }
 }
 
 export function isFavorite(place, favorites = null) {

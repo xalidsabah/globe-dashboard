@@ -2,6 +2,7 @@ import WeatherIcon from './WeatherIcon'
 import StarButton from './StarButton'
 import { samePlace } from '../lib/places'
 import useQuietExpand from '../hooks/useQuietExpand'
+import useLocalTime from '../hooks/useLocalTime'
 
 export default function LeftPromo({
   dark,
@@ -18,6 +19,7 @@ export default function LeftPromo({
   styleLeft = 'left-20',
 }) {
   const forceOpen = useQuietExpand()
+  const localTime = useLocalTime(weather?.timezone || place?.timezone)
   if (hidden) return null
 
   const c = weather?.current
@@ -84,6 +86,7 @@ export default function LeftPromo({
           <p className="truncate text-[13px] font-medium leading-tight">{place?.name || '—'}</p>
           <p className={`truncate text-[10px] leading-tight ${mute}`}>
             {c?.label || 'Loading…'}
+            {localTime ? ` · ${localTime}` : ''}
           </p>
         </div>
         <p className="shrink-0 text-lg font-medium tabular-nums leading-none tracking-tight">

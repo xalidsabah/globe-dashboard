@@ -6,14 +6,17 @@ import LeftPromo from './components/LeftPromo'
 import StatsPanel from './components/StatsPanel'
 import BottomControls from './components/BottomControls'
 import BottomPanel from './components/BottomPanel'
-import { fetchWeather, fetchCitiesSnapshot, QUICK_CITIES } from './lib/weather'
+import { fetchWeather, fetchCitiesSnapshot, reverseGeocode, QUICK_CITIES } from './lib/weather'
 import {
   loadFavorites,
   toggleFavorite as toggleFavoriteStore,
   isFavorite as checkFavorite,
   pushRecent,
   normalizePlace,
+  loadLastPlace,
+  saveLastPlace,
 } from './lib/places'
+import useOnline from './hooks/useOnline'
 
 const loadGlobeScene = () => import('./components/GlobeScene')
 const GlobeScene = lazy(loadGlobeScene)
@@ -57,6 +60,7 @@ function toPlace(city) {
 
 export default function App() {
   const prefs = loadPrefs()
+  const online = useOnline()
   const [dark, setDark] = useState(prefs.dark !== false)
   const [mode, setMode] = useState('3d')
   const [zoom, setZoom] = useState(1)
@@ -69,9 +73,10 @@ export default function App() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [resetToken, setResetToken] = useState(0)
   const [unit, setUnit] = useState(prefs.unit === 'F' ? 'F' : 'C')
-  const [place, setPlace] = useState(DEFAULT_PLACE)
+  const [place, setPlace] = useState(() => loadLastPlace() || DEFAULT_PLACE)
   const [weather, setWeather] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [liveMs, setLiveMs] = useState(null)
   const [toast, setToast] = useState(null)
   const [autoRotate, setAutoRotate] = useState(prefs.autoRotate !== false)
@@ -153,12 +158,18 @@ export default function App() {
   )
 
   useEffect(() => {
-    loadWeather(DEFAULT_PLACE, { silent: true })
+    const start = loadLastPlace() || DEFAULT_PLACE
+    setPlace(start)
+    loadWeather(start, { silent: true })
     fetchCitiesSnapshot(QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` })))
       .then(setCitySnaps)
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!online) showToast('You’re offline')
+  }, [online, showToast])
 
   useEffect(() => {
     if (!autoRefresh || !place) return
@@ -220,6 +231,7 @@ export default function App() {
       const placeObj = toPlace(p)
       setPlace(placeObj)
       pushRecent(placeObj)
+      saveLastPlace(placeObj)
       setZoom(1.08)
       setResetToken((n) => n + 1)
       setFullscreen(false)
@@ -237,6 +249,96 @@ export default function App() {
     },
     [loadWeather]
   )
+
+  const locateMe = useCallback(() => {
+    if (!navigator.geolocation) {
+      showToast('Location not supported')
+      return
+    }
+    setLocating(true)
+    showToast('Finding you…')
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lng } = pos.coords
+          const found = await reverseGeocode(lat, lng)
+          selectPlace(
+            {
+              ...found,
+              lat,
+              lng,
+            },
+            { openHourly: true, fromSearch: true }
+          )
+          showToast(`${found.name} · near you`)
+        } catch (e) {
+          console.error(e)
+          selectPlace(
+            {
+              id: `geo-${pos.coords.latitude},${pos.coords.longitude}`,
+              name: 'Your location',
+              country: '',
+              admin1: '',
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              timezone: 'auto',
+              label: 'Your location',
+            },
+            { openHourly: true, fromSearch: true }
+          )
+          showToast('Location found')
+        } finally {
+          setLocating(false)
+        }
+      },
+      (err) => {
+        setLocating(false)
+        showToast(err?.code === 1 ? 'Location permission denied' : 'Could not get location')
+      },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
+    )
+  }, [selectPlace, showToast])
+
+  const sharePlace = useCallback(async () => {
+    if (!place) return
+    const temp =
+      weather?.current?.temp != null
+        ? unit === 'F'
+          ? Math.round((weather.current.temp * 9) / 5 + 32)
+          : Math.round(weather.current.temp)
+        : null
+    const label = weather?.current?.label || ''
+    const text = [
+      place.label || place.name,
+      temp != null ? `${temp}°${unit}` : null,
+      label,
+      typeof window !== 'undefined' ? window.location.href : '',
+    ]
+      .filter(Boolean)
+      .join(' · ')
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${place.name} weather`,
+          text,
+          url: window.location.href,
+        })
+        showToast('Shared')
+      } else {
+        await navigator.clipboard.writeText(text)
+        showToast('Copied to clipboard')
+      }
+    } catch (e) {
+      if (e?.name === 'AbortError') return
+      try {
+        await navigator.clipboard.writeText(text)
+        showToast('Copied to clipboard')
+      } catch {
+        showToast('Could not share')
+      }
+    }
+  }, [place, weather, unit, showToast])
 
   const handleNav = (id) => {
     setActiveNav(id)
@@ -373,6 +475,8 @@ export default function App() {
           <TopBar
             dark={dark}
             sidebarWide={sidebarExpanded}
+            online={online}
+            locating={locating}
             onToggleTheme={() => {
               setDarkPersist(!dark)
               showToast(!dark ? 'Dark theme' : 'Light theme')
@@ -390,6 +494,8 @@ export default function App() {
               setPanelOpen(false)
               setSearchOpen(true)
             }}
+            onLocate={locateMe}
+            onShare={sharePlace}
           />
         )}
 
@@ -411,6 +517,14 @@ export default function App() {
               onSelectFavorite={(f) => selectPlace(f, { openHourly: true })}
               styleLeft={sidebarExpanded ? 'left-[12rem]' : 'left-20'}
             />
+            {!online && (
+              <div
+                className="pointer-events-none absolute left-1/2 top-14 z-50 -translate-x-1/2 rounded-full border border-amber-400/25 bg-black/70 px-3 py-1 text-[10px] text-amber-200/90 backdrop-blur-md"
+                role="status"
+              >
+                Offline
+              </div>
+            )}
             <StatsPanel
               weather={weather}
               unit={unit}

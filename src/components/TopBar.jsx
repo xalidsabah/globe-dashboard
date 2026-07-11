@@ -13,9 +13,16 @@ export default function TopBar({
   onSettings,
   onLogout,
   onOpenSearch,
+  onLocate,
+  onShare,
+  locating = false,
+  online = true,
   sidebarWide = false,
 }) {
   const mute = dark ? 'text-white/40' : 'text-slate-500'
+  const pillBtn = `glass-pill flex h-7 shrink-0 items-center justify-center rounded-full ${
+    dark ? 'text-white/50 hover:text-white/90' : 'text-slate-500 hover:text-slate-800'
+  }`
 
   return (
     <header
@@ -77,6 +84,56 @@ export default function TopBar({
           <span>Search</span>
           <kbd className="kbd opacity-60">/</kbd>
         </button>
+
+        {onLocate && (
+          <button
+            type="button"
+            onClick={onLocate}
+            disabled={locating}
+            title="Use my location"
+            aria-label="Use my location"
+            className={`${pillBtn} w-7 ${locating ? 'opacity-60' : ''}`}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={locating ? 'animate-pulse' : ''}
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+              <path
+                d="M12 2v3M12 19v3M2 12h3M19 12h3"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+
+        {onShare && (
+          <button
+            type="button"
+            onClick={onShare}
+            title="Share weather"
+            aria-label="Share weather"
+            className={`${pillBtn} hidden w-7 sm:flex`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <path
+                d="M8.5 13.2 15.5 17.2M15.5 6.8 8.5 10.8"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="pointer-events-none z-30 flex max-w-[200px] flex-col items-center px-1">
@@ -89,11 +146,21 @@ export default function TopBar({
         </h1>
         <div
           className={`mt-1 flex items-center gap-1.5 text-[10px] ${mute}`}
-          title={latency != null ? `Live · ${latency} ms` : 'Live'}
+          title={
+            !online
+              ? 'Offline'
+              : latency != null
+                ? `Live · ${latency} ms`
+                : 'Live'
+          }
         >
-          <span className="live-dot h-1 w-1 shrink-0 rounded-full bg-emerald-400/90" />
-          <span>Live</span>
-          {latency != null && (
+          <span
+            className={`h-1 w-1 shrink-0 rounded-full ${
+              online ? 'live-dot bg-emerald-400/90' : 'bg-amber-400/90'
+            }`}
+          />
+          <span>{online ? 'Live' : 'Offline'}</span>
+          {online && latency != null && (
             <>
               <span className="opacity-40">·</span>
               <span className="tabular-nums opacity-80">{latency} ms</span>
@@ -168,6 +235,36 @@ export default function TopBar({
                       {placeName}
                     </p>
                   </div>
+                )}
+                {onLocate && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onCloseUserMenu()
+                      onLocate()
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] ${
+                      dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    Use my location
+                  </button>
+                )}
+                {onShare && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onCloseUserMenu()
+                      onShare()
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] ${
+                      dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    Share weather
+                  </button>
                 )}
                 <button
                   type="button"

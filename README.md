@@ -47,6 +47,8 @@ SPA note: if the host rewrites unknown paths, point them to `index.html` (defaul
 - **°C / °F**, light / dark, auto-rotate, auto-refresh
 - **3D / 2D**, fullscreen, keyboard shortcuts
 - Quiet UI — secondary detail on hover / focus / touch
+- **Use my location** + **share** weather · remembers last city
+- Local time for the selected place · offline indicator
 
 ## Shortcuts
 
