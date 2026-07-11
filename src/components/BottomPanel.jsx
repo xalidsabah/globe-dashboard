@@ -1,17 +1,31 @@
 import WeatherIcon from './WeatherIcon'
 import { formatDay, formatHour } from '../lib/weather'
 import { evaluateConditions } from '../lib/risk'
+import { useI18n } from '../i18n/index.jsx'
 
-function t(c, unit) {
+function dispTemp(c, unit) {
   if (c == null) return '—'
   return unit === 'F' ? Math.round((c * 9) / 5 + 32) : Math.round(c)
 }
 
 const TABS = [
-  { id: 'hourly', label: 'Hourly' },
-  { id: 'analytics', label: '7-Day' },
-  { id: 'alerts', label: 'Alerts' },
+  { id: 'hourly', labelKey: 'hourly' },
+  { id: 'analytics', labelKey: 'sevenDay' },
+  { id: 'alerts', labelKey: 'alerts' },
 ]
+
+function levelLabel(level, t) {
+  if (level === 'High') return t('high')
+  if (level === 'Medium') return t('medium')
+  return t('low')
+}
+
+function statusLabel(status, t) {
+  if (status === 'Alert') return t('risk_alert')
+  if (status === 'Caution') return t('risk_caution')
+  if (status === 'No data') return t('risk_noData')
+  return t('risk_stable')
+}
 
 export default function BottomPanel({
   open,
@@ -25,6 +39,7 @@ export default function BottomPanel({
   sidebarWide = false,
   loading = false,
 }) {
+  const { t } = useI18n()
   const hourly = (weather?.hourly || []).slice(0, 24)
   const daily = weather?.daily || []
   const tz = weather?.timezone
@@ -84,7 +99,7 @@ export default function BottomPanel({
                 dark ? 'text-white/95' : 'text-slate-900'
               }`}
             >
-              {place?.name || 'Select a city'}
+              {place?.name || t('selectCity')}
               {place?.country ? (
                 <span className={`font-normal ${dark ? 'text-white/40' : 'text-slate-400'}`}>
                   {' '}
@@ -95,13 +110,13 @@ export default function BottomPanel({
             <p className={`mt-0.5 text-[11px] ${dark ? 'text-white/40' : 'text-slate-500'}`}>
               {c ? (
                 <>
-                  {t(c.temp, unit)}°{unit} · {c.label}
-                  {loading ? ' · updating…' : ''}
+                  {dispTemp(c.temp, unit)}°{unit} · {c.label}
+                  {loading ? ` · ${t('updatingEllipsis')}` : ''}
                 </>
               ) : loading ? (
-                'Loading weather…'
+                t('loadingWeather')
               ) : (
-                'Click a city pin or search to load forecast'
+                t('clickPin')
               )}
             </p>
           </div>
@@ -118,7 +133,7 @@ export default function BottomPanel({
                 onClick={() => onModeChange?.(tab.id)}
                 className={`panel-tab ${mode === tab.id ? 'active' : dark ? 'text-white/45 hover:text-white/80' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
@@ -151,10 +166,10 @@ export default function BottomPanel({
                         <div
                           key={h.time}
                           className="group relative flex flex-1 flex-col items-center justify-end"
-                          title={`${formatHour(h.time, tz)}: ${t(h.temp, unit)}°`}
+                          title={`${formatHour(h.time, tz)}: ${dispTemp(h.temp, unit)}°`}
                         >
                           <span className="pointer-events-none absolute -top-4 hidden rounded bg-black/80 px-1 text-[8px] text-white group-hover:block">
-                            {t(h.temp, unit)}°
+                            {dispTemp(h.temp, unit)}°
                           </span>
                           <div
                             className={`hour-bar w-full max-w-[10px] rounded-t-sm ${
@@ -184,12 +199,12 @@ export default function BottomPanel({
                       }`}
                     >
                       <tr>
-                        <th className="px-3 py-2 font-medium">Time</th>
-                        <th className="px-3 py-2 font-medium">Condition</th>
-                        <th className="px-3 py-2 font-medium">Temp</th>
-                        <th className="px-3 py-2 font-medium">Feels</th>
-                        <th className="px-3 py-2 font-medium">Rain</th>
-                        <th className="px-3 py-2 font-medium">Wind</th>
+                        <th className="px-3 py-2 font-medium">{t('time')}</th>
+                        <th className="px-3 py-2 font-medium">{t('condition')}</th>
+                        <th className="px-3 py-2 font-medium">{t('temp')}</th>
+                        <th className="px-3 py-2 font-medium">{t('feels')}</th>
+                        <th className="px-3 py-2 font-medium">{t('rain')}</th>
+                        <th className="px-3 py-2 font-medium">{t('wind')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -199,7 +214,7 @@ export default function BottomPanel({
                             colSpan={6}
                             className={`px-3 py-8 text-center ${dark ? 'text-white/40' : 'text-slate-500'}`}
                           >
-                            No hourly data — pick a city on the globe
+                            {t('noHourly')}
                           </td>
                         </tr>
                       )}
@@ -225,8 +240,8 @@ export default function BottomPanel({
                               <span className="max-w-[120px] truncate">{h.label}</span>
                             </span>
                           </td>
-                          <td className="px-3 py-2 font-semibold tabular-nums">{t(h.temp, unit)}°</td>
-                          <td className="px-3 py-2 tabular-nums opacity-60">{t(h.feels, unit)}°</td>
+                          <td className="px-3 py-2 font-semibold tabular-nums">{dispTemp(h.temp, unit)}°</td>
+                          <td className="px-3 py-2 tabular-nums opacity-60">{dispTemp(h.feels, unit)}°</td>
                           <td
                             className={`px-3 py-2 tabular-nums ${
                               (h.precipProb || 0) > 40
@@ -260,7 +275,7 @@ export default function BottomPanel({
                     }`}
                   >
                     <span className={`w-[96px] font-medium ${dark ? 'text-white/90' : 'text-slate-800'}`}>
-                      {i === 0 ? 'Today' : formatDay(d.date, tz)}
+                      {i === 0 ? t('today') : formatDay(d.date, tz)}
                     </span>
                     <span className={dark ? 'text-sky-300' : 'text-sky-500'}>
                       <WeatherIcon icon={d.icon} size={16} />
@@ -279,13 +294,13 @@ export default function BottomPanel({
                         />
                       </div>
                     </div>
-                    <span className="w-10 text-right font-semibold tabular-nums">{t(d.tMax, unit)}°</span>
-                    <span className="w-10 text-right tabular-nums opacity-40">{t(d.tMin, unit)}°</span>
+                    <span className="w-10 text-right font-semibold tabular-nums">{dispTemp(d.tMax, unit)}°</span>
+                    <span className="w-10 text-right tabular-nums opacity-40">{dispTemp(d.tMin, unit)}°</span>
                   </div>
                 ))}
                 {!daily.length && !loading && (
                   <p className={`px-3 py-8 text-center text-xs ${dark ? 'text-white/40' : 'text-slate-500'}`}>
-                    No daily forecast yet
+                    {t('noDaily')}
                   </p>
                 )}
               </div>
@@ -310,7 +325,7 @@ export default function BottomPanel({
                             : 'bg-emerald-400/15 text-emerald-400'
                       }`}
                     >
-                      {a.level}
+                      {levelLabel(a.level, t)}
                     </span>
                     <div className="min-w-0">
                       <p className={`text-xs font-medium ${dark ? 'text-white/90' : 'text-slate-800'}`}>
@@ -327,7 +342,7 @@ export default function BottomPanel({
                   </div>
                 ))}
                 <p className={`px-1 pt-1 text-[10px] ${dark ? 'text-white/25' : 'text-slate-400'}`}>
-                  Derived from forecast data — not official weather service warnings.
+                  {t('derivedNote')}
                 </p>
               </div>
             )}
@@ -337,10 +352,10 @@ export default function BottomPanel({
           <div className="md:col-span-4">
             <div className="mb-2.5 flex items-center justify-between">
               <h3 className={`text-sm font-medium ${dark ? 'text-white/90' : 'text-slate-800'}`}>
-                Risk Overview
+                {t('riskOverview')}
               </h3>
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${riskTone}`}>
-                {riskStatus}
+                {statusLabel(riskStatus, t)}
               </span>
             </div>
             <div
@@ -351,7 +366,7 @@ export default function BottomPanel({
               <div className="flex items-end justify-between">
                 <div>
                   <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-                    Score
+                    {t('score')}
                   </p>
                   <p className={`mt-0.5 text-3xl font-semibold tabular-nums ${dark ? 'text-white' : 'text-slate-900'}`}>
                     {riskScore}
@@ -392,18 +407,18 @@ export default function BottomPanel({
                           : 'text-emerald-400'
                     }`}
                   >
-                    {riskLabel}
+                    {levelLabel(riskLabel, t)}
                   </div>
                 </div>
               </div>
 
               <div className="mt-3 space-y-2">
                 {[
-                  { label: 'Precip', value: factors.precip, color: 'bg-sky-400' },
-                  { label: 'Wind', value: factors.wind, color: 'bg-violet-400' },
-                  { label: 'UV', value: factors.uv, color: 'bg-amber-400' },
+                  { label: t('precip'), value: factors.precip, color: 'bg-sky-400' },
+                  { label: t('wind'), value: factors.wind, color: 'bg-violet-400' },
+                  { label: t('uv'), value: factors.uv, color: 'bg-amber-400' },
                   ...(factors.extreme > 0
-                    ? [{ label: 'Extreme', value: factors.extreme, color: 'bg-rose-400' }]
+                    ? [{ label: t('extreme'), value: factors.extreme, color: 'bg-rose-400' }]
                     : []),
                 ].map((row) => (
                   <div key={row.label}>
@@ -428,7 +443,7 @@ export default function BottomPanel({
               </div>
 
               <p className={`mt-3 text-[10px] leading-relaxed ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-                Open-Meteo · {tz || 'local time'} · advisory only
+                Open-Meteo · {tz || 'local'} · {t('advisoryOnly')}
               </p>
             </div>
           </div>

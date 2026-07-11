@@ -163,16 +163,20 @@ async function fetchWithRetry(url, { retries = 2, timeoutMs = 12000 } = {}) {
   throw lastErr || new Error('Network failed')
 }
 
-/** European AQI bands (Open-Meteo consolidated index) */
+/** European AQI bands (Open-Meteo consolidated index). labelKey for i18n. */
 export function aqiLabel(aqi) {
-  if (aqi == null || Number.isNaN(aqi)) return { label: '—', level: 'unknown', tone: 'neutral' }
+  if (aqi == null || Number.isNaN(aqi)) {
+    return { label: '—', labelKey: null, level: 'unknown', tone: 'neutral' }
+  }
   const n = Number(aqi)
-  if (n <= 20) return { label: 'Good', level: 'good', tone: 'good' }
-  if (n <= 40) return { label: 'Fair', level: 'fair', tone: 'fair' }
-  if (n <= 60) return { label: 'Moderate', level: 'moderate', tone: 'moderate' }
-  if (n <= 80) return { label: 'Poor', level: 'poor', tone: 'poor' }
-  if (n <= 100) return { label: 'Very poor', level: 'very_poor', tone: 'bad' }
-  return { label: 'Extreme', level: 'extreme', tone: 'bad' }
+  if (n <= 20) return { label: 'Good', labelKey: 'aqi_good', level: 'good', tone: 'good' }
+  if (n <= 40) return { label: 'Fair', labelKey: 'aqi_fair', level: 'fair', tone: 'fair' }
+  if (n <= 60)
+    return { label: 'Moderate', labelKey: 'aqi_moderate', level: 'moderate', tone: 'moderate' }
+  if (n <= 80) return { label: 'Poor', labelKey: 'aqi_poor', level: 'poor', tone: 'poor' }
+  if (n <= 100)
+    return { label: 'Very poor', labelKey: 'aqi_very_poor', level: 'very_poor', tone: 'bad' }
+  return { label: 'Extreme', labelKey: 'aqi_extreme', level: 'extreme', tone: 'bad' }
 }
 
 export async function fetchAirQuality(lat, lng) {

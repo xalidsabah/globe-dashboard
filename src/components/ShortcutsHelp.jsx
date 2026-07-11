@@ -1,15 +1,18 @@
+import { useI18n } from '../i18n/index.jsx'
+
 const ROWS = [
-  { keys: ['/'], label: 'Search cities' },
-  { keys: ['H'], label: 'Hourly forecast' },
-  { keys: ['D'], label: '7-day forecast' },
-  { keys: ['F'], label: 'Fullscreen' },
-  { keys: ['L'], label: 'Use my location' },
-  { keys: ['S'], label: 'Share weather' },
-  { keys: ['?'], label: 'This help' },
-  { keys: ['Esc'], label: 'Close / exit' },
+  { keys: ['/'], labelKey: 'sc_search' },
+  { keys: ['H'], labelKey: 'sc_hourly' },
+  { keys: ['D'], labelKey: 'sc_7day' },
+  { keys: ['F'], labelKey: 'sc_fullscreen' },
+  { keys: ['L'], labelKey: 'sc_locate' },
+  { keys: ['S'], labelKey: 'sc_share' },
+  { keys: ['?'], labelKey: 'sc_help' },
+  { keys: ['Esc'], labelKey: 'sc_esc' },
 ]
 
 export default function ShortcutsHelp({ open, onClose, dark = true }) {
+  const { t } = useI18n()
   if (!open) return null
 
   return (
@@ -17,13 +20,13 @@ export default function ShortcutsHelp({ open, onClose, dark = true }) {
       className="absolute inset-0 z-[85] flex items-center justify-center p-5"
       role="dialog"
       aria-modal="true"
-      aria-label="Keyboard shortcuts"
+      aria-label={t('keyboardShortcuts')}
     >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('close')}
       />
       <div
         className={`modal-enter relative w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl ${
@@ -34,9 +37,9 @@ export default function ShortcutsHelp({ open, onClose, dark = true }) {
       >
         <div className={`flex items-center justify-between border-b px-5 py-4 ${dark ? 'border-white/8' : 'border-slate-100'}`}>
           <div>
-            <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>Reference</p>
+            <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>{t('reference')}</p>
             <h2 className={`text-lg font-medium ${dark ? 'text-white' : 'text-slate-900'}`}>
-              Shortcuts
+              {t('shortcuts')}
             </h2>
           </div>
           <button
@@ -52,13 +55,13 @@ export default function ShortcutsHelp({ open, onClose, dark = true }) {
         <ul className="space-y-1 px-4 py-3">
           {ROWS.map((row) => (
             <li
-              key={row.label}
+              key={row.labelKey}
               className={`flex items-center justify-between rounded-xl px-2 py-2 ${
                 dark ? 'hover:bg-white/[0.03]' : 'hover:bg-slate-50'
               }`}
             >
               <span className={`text-[13px] ${dark ? 'text-white/80' : 'text-slate-700'}`}>
-                {row.label}
+                {t(row.labelKey)}
               </span>
               <span className="flex gap-1">
                 {row.keys.map((k) => (
@@ -71,7 +74,7 @@ export default function ShortcutsHelp({ open, onClose, dark = true }) {
           ))}
         </ul>
         <p className={`border-t px-5 py-3 text-[11px] ${dark ? 'border-white/6 text-white/30' : 'border-slate-100 text-slate-400'}`}>
-          Drag the globe · scroll to zoom · star cities to save them
+          {t('shortcutsFoot')}
         </p>
       </div>
     </div>

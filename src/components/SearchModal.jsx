@@ -11,13 +11,14 @@ import {
   normalizePlace,
 } from '../lib/places'
 import StarButton, { StarIcon } from './StarButton'
+import { useI18n } from '../i18n/index.jsx'
 
 const POPULAR = QUICK_CITIES.slice(0, 12)
 
-const GROUP_LABEL = {
-  favorite: 'Favorites',
-  recent: 'Recent',
-  popular: 'Popular cities',
+const GROUP_LABEL_KEY = {
+  favorite: 'favorites',
+  recent: 'recent',
+  popular: 'popularCities',
   result: null,
 }
 
@@ -53,6 +54,7 @@ export default function SearchModal({
   favorites: favoritesProp,
   onFavoritesChange,
 }) {
+  const { t } = useI18n()
   const listId = useId()
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
@@ -243,14 +245,14 @@ export default function SearchModal({
           </div>
           <div className="min-w-0 flex-1">
             <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-              Find a city
+              {t('findACity')}
             </p>
             <input
               ref={inputRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Tokyo, Paris, Los Angeles…"
+              placeholder="Tokyo, Paris, Hewlêr…"
               autoComplete="off"
               spellCheck={false}
               role="combobox"
@@ -273,7 +275,7 @@ export default function SearchModal({
                 dark ? 'text-sky-300' : 'text-sky-600'
               }`}
             >
-              Searching
+              {t('searching')}
             </span>
           )}
           <button
@@ -308,8 +310,8 @@ export default function SearchModal({
 
           {emptySearch && (
             <div className={`px-6 py-12 text-center ${dark ? 'text-white/40' : 'text-slate-500'}`}>
-              <p className="text-sm font-medium">No places found</p>
-              <p className="mt-1 text-[12px]">Try another spelling or a nearby city</p>
+              <p className="text-sm font-medium">{t('noPlaces')}</p>
+              <p className="mt-1 text-[12px]">{t('trySpelling')}</p>
             </div>
           )}
 
@@ -319,7 +321,7 @@ export default function SearchModal({
                 dark ? 'text-white/35' : 'text-slate-500'
               }`}
             >
-              Star cities to pin favorites. Recent picks appear here automatically.
+              {t('starHint')}
             </p>
           )}
 
@@ -328,7 +330,7 @@ export default function SearchModal({
             lastGroup = r.group
             const active = activeIdx === i
             const fav = isFavorite(r, favorites)
-            const label = GROUP_LABEL[r.group]
+            const label = GROUP_LABEL_KEY[r.group] ? t(GROUP_LABEL_KEY[r.group]) : null
             const optId = `${listId}-opt-${i}`
 
             return (
@@ -351,7 +353,7 @@ export default function SearchModal({
                             : 'text-slate-400 hover:text-slate-600'
                         }`}
                       >
-                        Clear
+                        {t('clear')}
                       </button>
                     )}
                   </div>
@@ -428,12 +430,12 @@ export default function SearchModal({
           }`}
         >
           <span className="flex flex-wrap items-center gap-1.5">
-            <kbd className="kbd">↑↓</kbd> move
-            <kbd className="kbd">↵</kbd> open
-            <kbd className="kbd">esc</kbd> close
+            <kbd className="kbd">↑↓</kbd> {t('move')}
+            <kbd className="kbd">↵</kbd> {t('open')}
+            <kbd className="kbd">esc</kbd> {t('close')}
           </span>
           <span className="flex items-center gap-1 opacity-80">
-            <StarIcon filled size={12} /> saved on this device
+            <StarIcon filled size={12} /> {t('savedOnDevice')}
           </span>
         </div>
       </div>

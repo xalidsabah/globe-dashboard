@@ -1,6 +1,7 @@
 import WeatherIcon from './WeatherIcon'
 import { windDir, formatTime } from '../lib/weather'
 import useQuietExpand from '../hooks/useQuietExpand'
+import { useI18n } from '../i18n/index.jsx'
 
 function temp(c, unit) {
   if (c == null) return '—'
@@ -33,13 +34,14 @@ export default function StatsPanel({
   outdoor = null,
 }) {
   const forceOpen = useQuietExpand()
+  const { t } = useI18n()
   if (hidden) return null
 
   const c = weather?.current
   const day = weather?.daily?.[0]
   const air = weather?.air
   const humidity = c?.humidity != null ? Math.round(c.humidity) : null
-  const t = c?.temp
+  const tVal = c?.temp
   const wind = windDisplay(c?.wind, unit)
 
   const temps = hourly
@@ -51,34 +53,32 @@ export default function StatsPanel({
   const span = Math.max(0.5, hi - lo)
 
   const tz = weather?.timezone
+  const aqiLabel = air?.labelKey ? t(air.labelKey) : air?.label || ''
   const metrics = [
     {
-      label: 'Humidity',
+      label: t('humidity'),
       value: humidity != null ? `${humidity}%` : '—',
     },
     {
-      label: 'Wind',
+      label: t('wind'),
       value: wind ? `${wind.value} ${wind.unit}` : '—',
       sub: c?.windDeg != null ? windDir(c.windDeg) : null,
     },
     {
-      label: 'High / Low',
+      label: t('highLow'),
       value: day ? `${temp(day.tMax, unit)}° / ${temp(day.tMin, unit)}°` : '—',
     },
     {
-      label: 'UV',
+      label: t('uv'),
       value: c?.uv != null ? c.uv.toFixed(1) : day?.uvMax != null ? day.uvMax.toFixed(1) : '—',
     },
     {
-      label: 'AQI',
-      value:
-        air?.aqi != null
-          ? `${Math.round(air.aqi)} ${air.label || ''}`.trim()
-          : '—',
+      label: t('aqi'),
+      value: air?.aqi != null ? `${Math.round(air.aqi)} ${aqiLabel}`.trim() : '—',
       tone: air?.tone,
     },
     {
-      label: 'Sun',
+      label: t('sun'),
       value:
         day?.sunrise && day?.sunset
           ? `${formatTime(day.sunrise, tz)} – ${formatTime(day.sunset, tz)}`
@@ -103,7 +103,7 @@ export default function StatsPanel({
         {/* Primary header + temp */}
         <div className="flex items-center justify-between gap-2">
           <div className={`flex min-w-0 items-center gap-1.5 text-[10px] ${mute}`}>
-            <span>WX</span>
+            <span>{t('wx')}</span>
             <span className={dark ? 'text-sky-300/80' : 'text-sky-500'}>
               <WeatherIcon icon={c?.icon || 'cloud'} size={13} isDay={c?.isDay !== false} />
             </span>
@@ -113,8 +113,8 @@ export default function StatsPanel({
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
-            title={refreshing ? 'Updating' : 'Refresh'}
-            aria-label={refreshing ? 'Updating' : 'Refresh weather'}
+            title={refreshing ? t('updating') : t('refresh')}
+            aria-label={refreshing ? t('updating') : t('refresh')}
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
               dark
                 ? 'text-white/35 hover:bg-white/8 hover:text-white/80'
@@ -136,16 +136,16 @@ export default function StatsPanel({
                 strokeLinecap="round"
               />
             </svg>
-            <span className="sr-only">{refreshing ? 'Updating' : 'Refresh'}</span>
+            <span className="sr-only">{refreshing ? t('updating') : t('refresh')}</span>
           </button>
         </div>
 
-        <p className={`mt-3 text-[10px] ${mute}`}>Now</p>
+        <p className={`mt-3 text-[10px] ${mute}`}>{t('now')}</p>
 
         {error && !c ? (
           <div className="mt-1 text-right">
             <p className={`text-[12px] ${dark ? 'text-rose-300/80' : 'text-rose-600'}`}>
-              Could not load weather
+              {t('couldNotLoadWeather')}
             </p>
             <button
               type="button"
@@ -154,7 +154,7 @@ export default function StatsPanel({
                 dark ? 'text-white/45' : 'text-slate-500'
               }`}
             >
-              Retry
+              {t('retry')}
             </button>
           </div>
         ) : refreshing && !c ? (
@@ -166,7 +166,7 @@ export default function StatsPanel({
                 refreshing ? 'opacity-50' : ''
               }`}
             >
-              {temp(t, unit)}
+              {temp(tVal, unit)}
             </span>
             <span className={`mt-1 text-sm font-normal ${mute}`}>°{unit}</span>
           </div>
@@ -175,7 +175,7 @@ export default function StatsPanel({
         {/* Secondary: feels + outdoor tip + sparkline + metrics */}
         {c?.feels != null && (
           <p className={`quiet-secondary quiet-gap text-right text-[11px] ${mute}`}>
-            Feels like {temp(c.feels, unit)}°
+            {t('feelsLike', { n: temp(c.feels, unit) })}
           </p>
         )}
 
@@ -184,14 +184,11 @@ export default function StatsPanel({
             className={`quiet-secondary quiet-gap text-right text-[11px] leading-snug ${
               dark ? 'text-sky-300/70' : 'text-sky-700/80'
             }`}
-            title={
-              outdoor.condition
-                ? `${outdoor.condition}${outdoor.precipProb != null ? ` · ${Math.round(outdoor.precipProb)}% rain` : ''}`
-                : 'Best outdoor window'
-            }
+            title={outdoor.condition || t('bestOutdoors', { time: outdoor.label })}
           >
-            Outdoors ~{outdoor.label}
-            {outdoor.temp != null ? ` · ${temp(outdoor.temp, unit)}°` : ''}
+            {outdoor.temp != null
+              ? t('outdoorsTemp', { time: outdoor.label, temp: temp(outdoor.temp, unit) })
+              : t('outdoors', { time: outdoor.label })}
           </p>
         )}
 

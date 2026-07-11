@@ -3,6 +3,7 @@
  */
 import WeatherIcon from './WeatherIcon'
 import { samePlace } from '../lib/places'
+import { useI18n } from '../i18n/index.jsx'
 
 function displayTemp(c, unit) {
   if (c == null) return '—'
@@ -17,6 +18,7 @@ export default function FavoriteStrip({
   onSelect,
   hidden = false,
 }) {
+  const { t } = useI18n()
   if (hidden || !cities.length) return null
 
   // Prefer other favorites; if only active, still show it briefly
@@ -31,7 +33,7 @@ export default function FavoriteStrip({
           : 'border-slate-200/80 bg-white/85 shadow-sm'
       }`}
       role="list"
-      aria-label="Favorite cities"
+      aria-label={t('favorites')}
     >
       {list.map((city) => (
         <button

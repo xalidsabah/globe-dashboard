@@ -28,6 +28,7 @@ import {
 } from './lib/places'
 import { placeFromSearch, writePlaceToUrl, placeShareUrl } from './lib/urlPlace'
 import useOnline from './hooks/useOnline'
+import { useI18n } from './i18n/index.jsx'
 
 const loadGlobeScene = () => import('./components/GlobeScene')
 const GlobeScene = lazy(loadGlobeScene)
@@ -73,6 +74,7 @@ function toPlace(city) {
 export default function App() {
   const prefs = loadPrefs()
   const online = useOnline()
+  const { t } = useI18n()
   const [dark, setDark] = useState(prefs.dark !== false)
   const [autoTheme, setAutoTheme] = useState(prefs.autoTheme === true)
   const [quality, setQuality] = useState(prefs.quality === 'low' ? 'low' : 'high')
@@ -129,10 +131,10 @@ export default function App() {
       if (!target?.lat && !target?.name) return
       const { list, added } = toggleFavoriteStore(target)
       setFavorites(list)
-      const name = target?.name || 'City'
-      showToast(added ? `★ ${name} saved` : `${name} removed`)
+      const name = target?.name || t('city')
+      showToast(added ? t('toast_saved', { name }) : t('toast_removed', { name }))
     },
-    [place, showToast]
+    [place, showToast, t]
   )
 
   const placeIsFavorite = useMemo(
@@ -160,18 +162,23 @@ export default function App() {
         )
         if (!silent) {
           const deg = data.current?.temp != null ? Math.round(data.current.temp) : '—'
-          const aqiBit = data.air?.label && data.air.label !== '—' ? ` · AQI ${data.air.label}` : ''
+          const aqiBit =
+            data.air?.labelKey || (data.air?.label && data.air.label !== '—')
+              ? t('toast_aqi', {
+                  label: data.air.labelKey ? t(data.air.labelKey) : data.air.label,
+                })
+              : ''
           showToast(`${p.name} · ${deg}°${aqiBit}`)
         }
       } catch (e) {
         console.error(e)
         setWeatherError(true)
-        if (!silent) showToast('Could not load weather')
+        if (!silent) showToast(t('couldNotLoadWeather'))
       } finally {
         setLoading(false)
       }
     },
-    [showToast]
+    [showToast, t]
   )
 
   const outdoor = useMemo(
@@ -231,8 +238,8 @@ export default function App() {
   }, [favorites])
 
   useEffect(() => {
-    if (!online) showToast('You’re offline')
-  }, [online, showToast])
+    if (!online) showToast(t('toast_offline'))
+  }, [online, showToast, t])
 
   useEffect(() => {
     if (!autoRefresh || !place) return
@@ -273,11 +280,11 @@ export default function App() {
 
   const locateMe = useCallback(() => {
     if (!navigator.geolocation) {
-      showToast('Location not supported')
+      showToast(t('toast_locUnsupported'))
       return
     }
     setLocating(true)
-    showToast('Finding you…')
+    showToast(t('toast_finding'))
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
@@ -291,34 +298,34 @@ export default function App() {
             },
             { openHourly: true, fromSearch: true }
           )
-          showToast(`${found.name} · near you`)
+          showToast(t('toast_nearYou', { name: found.name }))
         } catch (e) {
           console.error(e)
           selectPlace(
             {
               id: `geo-${pos.coords.latitude},${pos.coords.longitude}`,
-              name: 'Your location',
+              name: t('yourLocation'),
               country: '',
               admin1: '',
               lat: pos.coords.latitude,
               lng: pos.coords.longitude,
               timezone: 'auto',
-              label: 'Your location',
+              label: t('yourLocation'),
             },
             { openHourly: true, fromSearch: true }
           )
-          showToast('Location found')
+          showToast(t('toast_locFound'))
         } finally {
           setLocating(false)
         }
       },
       (err) => {
         setLocating(false)
-        showToast(err?.code === 1 ? 'Location permission denied' : 'Could not get location')
+        showToast(err?.code === 1 ? t('toast_locDenied') : t('toast_locFail'))
       },
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
     )
-  }, [selectPlace, showToast])
+  }, [selectPlace, showToast, t])
 
   const clearLocalData = useCallback(() => {
     try {
@@ -340,8 +347,8 @@ export default function App() {
     setAutoRefresh(true)
     writePlaceToUrl(DEFAULT_PLACE)
     loadWeather(DEFAULT_PLACE, { silent: true })
-    showToast('Local data cleared')
-  }, [loadWeather, showToast])
+    showToast(t('toast_cleared'))
+  }, [loadWeather, showToast, t])
 
   const sharePlace = useCallback(async () => {
     if (!place) return
@@ -370,21 +377,21 @@ export default function App() {
           text,
           url: link,
         })
-        showToast('Shared')
+        showToast(t('toast_shared'))
       } else {
         await navigator.clipboard.writeText(text)
-        showToast('Link copied')
+        showToast(t('toast_copied'))
       }
     } catch (e) {
       if (e?.name === 'AbortError') return
       try {
         await navigator.clipboard.writeText(text)
-        showToast('Link copied')
+        showToast(t('toast_copied'))
       } catch {
-        showToast('Could not share')
+        showToast(t('toast_shareFail'))
       }
     }
-  }, [place, weather, unit, showToast])
+  }, [place, weather, unit, showToast, t])
 
   const handleNav = (id) => {
     setActiveNav(id)
@@ -398,7 +405,7 @@ export default function App() {
       setMode('3d')
       setAutoRotate(true)
       setResetToken((n) => n + 1)
-      showToast('Global view')
+      showToast(t('toast_global'))
     } else if (id === 'search') {
       setPanelOpen(false)
       setSearchOpen(true)
@@ -419,7 +426,7 @@ export default function App() {
     setMode('3d')
     setAutoRotate(true)
     setResetToken((n) => n + 1)
-    showToast('View reset')
+    showToast(t('toast_reset'))
   }
 
   const toggleFullscreen = useCallback(async () => {
@@ -428,7 +435,7 @@ export default function App() {
         setPanelOpen(false)
         await document.documentElement.requestFullscreen()
         setFullscreen(true)
-        showToast('Fullscreen')
+        showToast(t('toast_fs'))
       } else {
         await document.exitFullscreen()
         setFullscreen(false)
@@ -437,11 +444,11 @@ export default function App() {
       setFullscreen((f) => {
         const next = !f
         if (next) setPanelOpen(false)
-        showToast(next ? 'Fullscreen' : 'Exit fullscreen')
+        showToast(next ? t('toast_fs') : t('exitFullscreen'))
         return next
       })
     }
-  }, [showToast])
+  }, [showToast, t])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -612,7 +619,7 @@ export default function App() {
             locating={locating}
             onToggleTheme={() => {
               setDarkPersist(!dark)
-              showToast(!dark ? 'Dark theme' : 'Light theme')
+              showToast(!dark ? t('toast_dark') : t('toast_light'))
             }}
             onOpenHelp={() => setHelpOpen(true)}
             latency={liveMs}
@@ -688,7 +695,7 @@ export default function App() {
             setMode(m)
             setResetToken((n) => n + 1)
             if (m === '2d') setAutoRotate(false)
-            showToast(m === '3d' ? '3D mode' : '2D mode')
+            showToast(m === '3d' ? t('mode3d') : t('mode2d'))
           }}
           onZoomIn={() => setZoom((z) => Math.min(2.2, +(z + 0.18).toFixed(2)))}
           onZoomOut={() => setZoom((z) => Math.max(0.5, +(z - 0.18).toFixed(2)))}
@@ -736,8 +743,8 @@ export default function App() {
               favorites={favorites}
               onFavoritesChange={(list, added) => {
                 setFavorites(list)
-                if (added === true) showToast('★ Added to favorites')
-                else if (added === false) showToast('Removed from favorites')
+                if (added === true) showToast(t('toast_favAdd'))
+                else if (added === false) showToast(t('toast_favRem'))
               }}
             />
           )}
@@ -779,7 +786,7 @@ export default function App() {
             onClick={toggleFullscreen}
             className="pointer-events-auto absolute right-4 top-4 z-50 glass-pill rounded-full px-3.5 py-1.5 text-xs font-medium text-white/85"
           >
-            Exit fullscreen · <kbd className="kbd">Esc</kbd>
+            {t('exitFullscreen')} · <kbd className="kbd">Esc</kbd>
           </button>
         )}
 

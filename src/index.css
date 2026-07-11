@@ -11,7 +11,8 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter", "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma,
+    system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 400;
   letter-spacing: -0.01em;
   background: #050a14;
@@ -24,6 +25,14 @@ body,
 ::selection {
   background: rgba(56, 189, 248, 0.35);
   color: #fff;
+}
+
+/* Sorani / RTL layout polish */
+html[dir='rtl'] .kbd {
+  direction: ltr;
+}
+html[dir='rtl'] .tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Visually hidden but present for screen readers / word retention */

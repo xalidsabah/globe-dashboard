@@ -3,6 +3,7 @@ import StarButton from './StarButton'
 import { samePlace } from '../lib/places'
 import useQuietExpand from '../hooks/useQuietExpand'
 import useLocalTime from '../hooks/useLocalTime'
+import { useI18n } from '../i18n/index.jsx'
 
 export default function LeftPromo({
   dark,
@@ -21,6 +22,7 @@ export default function LeftPromo({
 }) {
   const forceOpen = useQuietExpand()
   const localTime = useLocalTime(weather?.timezone || place?.timezone)
+  const { t } = useI18n()
   if (hidden) return null
 
   const c = weather?.current
@@ -30,6 +32,7 @@ export default function LeftPromo({
     temp == null ? '—' : unit === 'F' ? Math.round((temp * 9) / 5 + 32) : Math.round(temp)
 
   const otherFavs = favorites.filter((f) => !samePlace(f, place)).slice(0, 4)
+  const aqiText = air?.labelKey ? t(air.labelKey) : air?.label && air.label !== '—' ? air.label : null
 
   const mute = dark ? 'text-white/30' : 'text-slate-500/80'
   const soft = dark ? 'text-white/50' : 'text-slate-600'
@@ -43,7 +46,7 @@ export default function LeftPromo({
       {/* Secondary: marketing + links — hover / focus / touch */}
       <div className="quiet-secondary quiet-gap-lg pointer-events-auto">
         <p className={`text-[11px] leading-snug ${mute}`}>
-          <span className={soft}>Live weather.</span> Plan your day with weather
+          <span className={soft}>{t('liveWeather')}</span> {t('planDay')}
           <span className="text-amber-400/70"> ✦</span>
         </p>
         <div className="mt-2 flex items-center gap-2.5">
@@ -56,7 +59,7 @@ export default function LeftPromo({
                 : 'text-amber-600/80 hover:text-amber-700'
             }`}
           >
-            How it works
+            {t('howItWorks')}
           </button>
           <span className={dark ? 'text-white/15' : 'text-slate-300'} aria-hidden>
             ·
@@ -68,7 +71,7 @@ export default function LeftPromo({
               dark ? 'text-white/35 hover:text-white/70' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Search <kbd className="kbd ml-0.5 opacity-70">/</kbd>
+            {t('search')} <kbd className="kbd ml-0.5 opacity-70">/</kbd>
           </button>
         </div>
       </div>
@@ -87,9 +90,9 @@ export default function LeftPromo({
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-medium leading-tight">{place?.name || '—'}</p>
           <p className={`truncate text-[10px] leading-tight ${mute}`}>
-            {c?.label || 'Loading…'}
+            {c?.label || t('loading')}
             {localTime ? ` · ${localTime}` : ''}
-            {air?.label && air.label !== '—' ? ` · AQI ${air.label}` : ''}
+            {aqiText ? ` · AQI ${aqiText}` : ''}
           </p>
         </div>
         <p className="shrink-0 text-lg font-medium tabular-nums leading-none tracking-tight">
@@ -103,7 +106,7 @@ export default function LeftPromo({
 
       {outdoor?.label && (
         <p className={`quiet-secondary quiet-gap text-[11px] leading-snug ${mute}`}>
-          Best outdoors ~{outdoor.label}
+          {t('bestOutdoors', { time: outdoor.label })}
           {outdoor.condition ? ` · ${outdoor.condition}` : ''}
         </p>
       )}

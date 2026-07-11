@@ -1,4 +1,5 @@
 /** Top bar — compact, quiet chrome */
+import { useI18n } from '../i18n/index.jsx'
 
 export default function TopBar({
   dark,
@@ -20,6 +21,7 @@ export default function TopBar({
   online = true,
   sidebarWide = false,
 }) {
+  const { t } = useI18n()
   const mute = dark ? 'text-white/40' : 'text-slate-500'
   const pillBtn = `glass-pill flex h-7 shrink-0 items-center justify-center rounded-full ${
     dark ? 'text-white/50 hover:text-white/90' : 'text-slate-500 hover:text-slate-800'
@@ -36,8 +38,8 @@ export default function TopBar({
           type="button"
           onClick={onToggleTheme}
           className="glass-pill relative flex h-7 w-12 shrink-0 items-center rounded-full px-0.5"
-          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={dark ? 'Light mode' : 'Dark mode'}
+          aria-label={dark ? t('lightMode') : t('darkMode')}
+          title={dark ? t('lightMode') : t('darkMode')}
         >
           <span
             className={`flex h-5 w-5 items-center justify-center rounded-full shadow transition-transform duration-300 ${
@@ -64,8 +66,8 @@ export default function TopBar({
           className={`glass-pill flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] tabular-nums ${
             dark ? 'text-white/70 hover:text-white' : 'text-slate-600'
           }`}
-          title="Toggle °C / °F"
-          aria-label={`Temperature unit °${unit}. Click to switch.`}
+          title={t('toggleUnit')}
+          aria-label={t('toggleUnit')}
         >
           °{unit}
         </button>
@@ -76,13 +78,13 @@ export default function TopBar({
           className={`glass-pill hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] sm:flex ${
             dark ? 'text-white/45 hover:text-white/85' : 'text-slate-500 hover:text-slate-800'
           }`}
-          title="Search cities (/)"
+          title={t('searchCities')}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" />
             <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
-          <span>Search</span>
+          <span>{t('search')}</span>
           <kbd className="kbd opacity-60">/</kbd>
         </button>
 
@@ -91,8 +93,8 @@ export default function TopBar({
             type="button"
             onClick={onLocate}
             disabled={locating}
-            title="Use my location"
-            aria-label="Use my location"
+            title={t('useMyLocation')}
+            aria-label={t('useMyLocation')}
             className={`${pillBtn} w-7 ${locating ? 'opacity-60' : ''}`}
           >
             <svg
@@ -118,8 +120,8 @@ export default function TopBar({
           <button
             type="button"
             onClick={onShare}
-            title="Share weather"
-            aria-label="Share weather"
+            title={t('shareWeather')}
+            aria-label={t('shareWeather')}
             className={`${pillBtn} hidden w-7 sm:flex`}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -140,8 +142,8 @@ export default function TopBar({
           <button
             type="button"
             onClick={onOpenHelp}
-            title="Keyboard shortcuts (?)"
-            aria-label="Keyboard shortcuts"
+            title={t('keyboardShortcuts')}
+            aria-label={t('keyboardShortcuts')}
             className={`${pillBtn} hidden w-7 md:flex`}
           >
             <span className="text-[11px] font-semibold opacity-80">?</span>
@@ -155,16 +157,16 @@ export default function TopBar({
             dark ? 'text-white/80' : 'text-slate-700'
           }`}
         >
-          Global View
+          {t('appName')}
         </h1>
         <div
           className={`mt-1 flex items-center gap-1.5 text-[10px] ${mute}`}
           title={
             !online
-              ? 'Offline'
+              ? t('offline')
               : latency != null
-                ? `Live · ${latency} ms`
-                : 'Live'
+                ? `${t('live')} · ${latency} ms`
+                : t('live')
           }
         >
           <span
@@ -172,7 +174,7 @@ export default function TopBar({
               online ? 'live-dot bg-emerald-400/90' : 'bg-amber-400/90'
             }`}
           />
-          <span>{online ? 'Live' : 'Offline'}</span>
+          <span>{online ? t('live') : t('offline')}</span>
           {online && latency != null && (
             <>
               <span className="opacity-40">·</span>
@@ -205,7 +207,7 @@ export default function TopBar({
                 dark ? 'text-white/85' : 'text-slate-700'
               }`}
             >
-              Guest
+              {t('guest')}
             </span>
             <svg
               width="10"
@@ -239,7 +241,7 @@ export default function TopBar({
                   <div
                     className={`border-b px-3 py-2 ${dark ? 'border-white/8' : 'border-slate-100'}`}
                   >
-                    <p className={`text-[10px] ${mute}`}>Viewing</p>
+                    <p className={`text-[10px] ${mute}`}>{t('viewing')}</p>
                     <p
                       className={`mt-0.5 truncate text-[12px] font-medium ${
                         dark ? 'text-white' : 'text-slate-800'
@@ -261,7 +263,7 @@ export default function TopBar({
                       dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
                     }`}
                   >
-                    Use my location
+                    {t('useMyLocation')}
                   </button>
                 )}
                 {onShare && (
@@ -276,7 +278,7 @@ export default function TopBar({
                       dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
                     }`}
                   >
-                    Share weather
+                    {t('shareWeather')}
                   </button>
                 )}
                 <button
@@ -293,7 +295,7 @@ export default function TopBar({
                   <span className="opacity-40" aria-hidden>
                     ⚙
                   </span>{' '}
-                  Settings
+                  {t('settings')}
                 </button>
                 {onClearData && (
                   <button
@@ -309,7 +311,7 @@ export default function TopBar({
                         : 'text-rose-600 hover:bg-rose-50'
                     }`}
                   >
-                    Clear local data
+                    {t('clearLocalData')}
                   </button>
                 )}
               </div>

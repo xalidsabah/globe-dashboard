@@ -1,37 +1,28 @@
-const STEPS = [
-  {
-    title: 'Pick a place',
-    body: 'Search any city or tap a globe pin — the camera focuses there live.',
-  },
-  {
-    title: 'Read the nowcast',
-    body: 'Temperature, humidity, wind, and UV update from Open-Meteo in real time.',
-  },
-  {
-    title: 'Plan ahead',
-    body: 'Open the bottom panel for hourly + 7-day forecast and condition risk.',
-  },
-  {
-    title: 'Save favorites',
-    body: 'Star cities to pin them. Recent picks stick around on this device.',
-  },
-]
+import { useI18n } from '../i18n/index.jsx'
 
 export default function HowItWorksModal({ open, onClose, dark = true }) {
+  const { t } = useI18n()
   if (!open) return null
+
+  const STEPS = [
+    { title: t('how1Title'), body: t('how1Body') },
+    { title: t('how2Title'), body: t('how2Body') },
+    { title: t('how3Title'), body: t('how3Body') },
+    { title: t('how4Title'), body: t('how4Body') },
+  ]
 
   return (
     <div
       className="absolute inset-0 z-[60] flex items-center justify-center p-5 sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-label="How it works"
+      aria-label={t('howItWorksTitle')}
     >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('close')}
       />
       <div
         className={`modal-enter relative w-full max-w-md overflow-hidden rounded-3xl p-6 shadow-2xl ${
@@ -47,9 +38,9 @@ export default function HowItWorksModal({ open, onClose, dark = true }) {
 
         <div className="relative mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] text-amber-400/80">Weather globe</p>
+            <p className="text-[11px] text-amber-400/80">{t('weatherGlobe')}</p>
             <h2 className={`mt-0.5 text-lg font-medium ${dark ? 'text-white' : 'text-slate-900'}`}>
-              How it works
+              {t('howItWorksTitle')}
             </h2>
           </div>
           <button
@@ -60,7 +51,7 @@ export default function HowItWorksModal({ open, onClose, dark = true }) {
                 ? 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
-            aria-label="Close"
+            aria-label={t('close')}
           >
             ✕
           </button>
@@ -90,7 +81,7 @@ export default function HowItWorksModal({ open, onClose, dark = true }) {
         </ol>
 
         <p className={`mt-4 text-[11px] ${dark ? 'text-white/35' : 'text-slate-400'}`}>
-          Powered by Open-Meteo · free global weather, no API key.
+          {t('poweredBy')}
         </p>
 
         <button
@@ -102,7 +93,7 @@ export default function HowItWorksModal({ open, onClose, dark = true }) {
               : 'bg-slate-900 text-white hover:bg-slate-800'
           }`}
         >
-          Got it
+          {t('gotIt')}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 /** Bottom controls: 3D/2D, panel handle, zoom cluster */
+import { useI18n } from '../i18n/index.jsx'
 
 export default function BottomControls({
   mode,
@@ -12,6 +13,7 @@ export default function BottomControls({
   fullscreen = false,
   onToggleFullscreen,
 }) {
+  const { t } = useI18n()
   const active = dark ? 'bg-white text-[#0a1220] shadow-md' : 'bg-slate-900 text-white shadow-md'
   const idle = dark ? 'text-white/55 hover:text-white' : 'text-slate-600 hover:text-slate-900'
   const round = dark
@@ -68,8 +70,8 @@ export default function BottomControls({
             type="button"
             onClick={onExpandPanel}
             className={`pointer-events-auto flex items-center justify-center rounded-full backdrop-blur-md transition ${round}`}
-            aria-label="Show hourly forecast"
-            title="Hourly forecast"
+            aria-label={t('showHourly')}
+            title={t('hourlyForecast')}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -86,13 +88,13 @@ export default function BottomControls({
             dark ? 'text-white/25' : 'text-slate-400'
           }`}
         >
-          Zoom
+          {t('zoom')}
         </span>
         <button
           type="button"
           onClick={onZoomIn}
-          title="Zoom in"
-          aria-label="Zoom in"
+          title={t('zoomIn')}
+          aria-label={t('zoomIn')}
           className={`flex items-center justify-center rounded-full backdrop-blur-md transition ${round}`}
         >
           +
@@ -100,8 +102,8 @@ export default function BottomControls({
         <button
           type="button"
           onClick={onZoomOut}
-          title="Zoom out"
-          aria-label="Zoom out"
+          title={t('zoomOut')}
+          aria-label={t('zoomOut')}
           className={`flex items-center justify-center rounded-full backdrop-blur-md transition ${round}`}
         >
           −
@@ -109,8 +111,8 @@ export default function BottomControls({
         <button
           type="button"
           onClick={onResetView}
-          title="Reset view"
-          aria-label="Reset view"
+          title={t('resetView')}
+          aria-label={t('resetView')}
           className={`flex items-center justify-center rounded-full backdrop-blur-md transition ${round}`}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -126,8 +128,8 @@ export default function BottomControls({
         <button
           type="button"
           onClick={onToggleFullscreen}
-          title={fullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
-          aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
+          title={fullscreen ? t('exitFullscreen') : t('fullscreenMap')}
+          aria-label={fullscreen ? t('exitFullscreen') : t('fullscreenMap')}
           className={`flex items-center justify-center rounded-full backdrop-blur-md transition ${round} ${
             fullscreen ? (dark ? 'bg-white/15 text-white' : 'bg-slate-900 text-white') : ''
           }`}

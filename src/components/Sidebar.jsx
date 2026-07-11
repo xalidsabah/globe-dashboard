@@ -1,29 +1,30 @@
 /** Navigation rail — icons map to real actions */
+import { useI18n } from '../i18n/index.jsx'
 
 const icons = [
   {
     id: 'home',
-    label: 'Global',
+    labelKey: 'global',
     path: 'M4 10.5 12 3l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z',
   },
   {
     id: 'search',
-    label: 'Search',
+    labelKey: 'search',
     path: 'M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-3.5-3.5',
   },
   {
     id: 'forecast',
-    label: 'Hourly',
+    labelKey: 'hourly',
     path: 'M12 4 3 9l9 5 9-5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5',
   },
   {
     id: 'chart',
-    label: '7-Day',
+    labelKey: 'sevenDay',
     path: 'M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-7',
   },
   {
     id: 'alerts',
-    label: 'Alerts',
+    labelKey: 'alerts',
     path: 'M7 15h9a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.4A3 3 0 0 0 7 15zM11 14l-1.5 3h2.2L10.5 21l4-5h-2.2L14 14',
   },
 ]
@@ -38,6 +39,7 @@ export default function Sidebar({
   onToggleExpand,
   hidden = false,
 }) {
+  const { t } = useI18n()
   if (hidden) return null
 
   const width = expanded ? 'w-[168px]' : 'w-14'
@@ -49,7 +51,7 @@ export default function Sidebar({
           ? 'border-white/[0.06] bg-[#060b16]/75 backdrop-blur-xl'
           : 'border-slate-300/40 bg-white/80 backdrop-blur-xl'
       }`}
-      aria-label="Main navigation"
+      aria-label={t('menu')}
     >
       <div className={`mb-5 flex items-center ${expanded ? 'px-3' : 'justify-center'}`}>
         <button
@@ -85,7 +87,8 @@ export default function Sidebar({
               dark ? 'text-white/70' : 'text-slate-700'
             }`}
           >
-            Weather <span className={dark ? 'text-white/30' : 'text-slate-400'}>Globe</span>
+            {t('weather')}{' '}
+            <span className={dark ? 'text-white/30' : 'text-slate-400'}>{t('globe')}</span>
           </p>
         )}
       </div>
@@ -93,12 +96,13 @@ export default function Sidebar({
       <nav className={`flex flex-1 flex-col gap-1 ${expanded ? 'px-2' : 'items-center'}`}>
         {icons.map((icon) => {
           const active = activeNav === icon.id
+          const label = t(icon.labelKey)
           return (
             <button
               key={icon.id}
               type="button"
               onClick={() => onNav?.(icon.id)}
-              title={icon.label}
+              title={label}
               aria-current={active ? 'page' : undefined}
               className={`relative flex h-10 items-center rounded-xl transition-all ${
                 expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
@@ -134,7 +138,7 @@ export default function Sidebar({
                 <path d={icon.path} />
               </svg>
               {expanded && (
-                <span className="truncate text-[12px] font-medium tracking-wide">{icon.label}</span>
+                <span className="truncate text-[12px] font-medium tracking-wide">{label}</span>
               )}
             </button>
           )
@@ -145,7 +149,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={onSettings}
-          title="Settings"
+          title={t('settings')}
           className={`flex h-10 items-center rounded-xl transition ${
             expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
           } ${
@@ -169,13 +173,13 @@ export default function Sidebar({
               strokeLinecap="round"
             />
           </svg>
-          {expanded && <span className="text-[12px] font-medium">Settings</span>}
+          {expanded && <span className="text-[12px] font-medium">{t('settings')}</span>}
         </button>
         {onClearData && (
           <button
             type="button"
             onClick={onClearData}
-            title="Clear local data"
+            title={t('clearLocalData')}
             className={`flex h-10 items-center rounded-xl transition ${
               expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
             } ${
@@ -199,7 +203,7 @@ export default function Sidebar({
                 strokeLinejoin="round"
               />
             </svg>
-            {expanded && <span className="text-[12px] font-medium">Clear data</span>}
+            {expanded && <span className="text-[12px] font-medium">{t('clearData')}</span>}
           </button>
         )}
       </div>

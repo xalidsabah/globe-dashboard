@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/index.jsx'
+
 export default function SettingsModal({
   open,
   onClose,
@@ -13,14 +15,44 @@ export default function SettingsModal({
   quality = 'high',
   onToggleQuality,
 }) {
+  const { t, lang, setLang, locales } = useI18n()
   if (!open) return null
 
   const rows = [
     {
+      id: 'language',
+      icon: '文',
+      label: t('language'),
+      hint: t('languageHint'),
+      control: (
+        <div className={`flex flex-wrap justify-end gap-1 rounded-2xl p-0.5 ${dark ? 'bg-white/8' : 'bg-slate-100'}`}>
+          {locales.map((loc) => (
+            <button
+              key={loc.id}
+              type="button"
+              onClick={() => setLang(loc.id)}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                lang === loc.id
+                  ? dark
+                    ? 'bg-white text-slate-900 shadow'
+                    : 'bg-slate-900 text-white shadow'
+                  : dark
+                    ? 'text-white/45 hover:text-white/80'
+                    : 'text-slate-500'
+              }`}
+              title={loc.label}
+            >
+              {loc.native}
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
       id: 'unit',
       icon: '°',
-      label: 'Temperature unit',
-      hint: unit === 'C' ? 'Celsius (°C)' : 'Fahrenheit (°F)',
+      label: t('temperatureUnit'),
+      hint: unit === 'C' ? t('celsius') : t('fahrenheit'),
       control: (
         <div
           className={`flex rounded-full p-0.5 ${dark ? 'bg-white/8' : 'bg-slate-100'}`}
@@ -49,15 +81,15 @@ export default function SettingsModal({
     {
       id: 'autoTheme',
       icon: '◐',
-      label: 'Match day / night',
-      hint: autoTheme ? 'Theme follows local sunlight' : 'Manual theme only',
+      label: t('matchDayNight'),
+      hint: autoTheme ? t('themeFollowsSun') : t('manualTheme'),
       control: <Toggle on={autoTheme} onClick={onToggleAutoTheme} dark={dark} />,
     },
     {
       id: 'quality',
       icon: '◈',
-      label: 'Globe quality',
-      hint: quality === 'high' ? 'Sharper · more GPU' : 'Smoother on phones',
+      label: t('globeQuality'),
+      hint: quality === 'high' ? t('qualityHigh') : t('qualityLow'),
       control: (
         <div className={`flex rounded-full p-0.5 ${dark ? 'bg-white/8' : 'bg-slate-100'}`}>
           {['high', 'low'].map((q) => (
@@ -65,7 +97,7 @@ export default function SettingsModal({
               key={q}
               type="button"
               onClick={() => quality !== q && onToggleQuality?.()}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                 quality === q
                   ? dark
                     ? 'bg-white text-slate-900 shadow'
@@ -75,7 +107,7 @@ export default function SettingsModal({
                     : 'text-slate-500'
               }`}
             >
-              {q}
+              {t(q === 'high' ? 'highLabel' : 'lowLabel')}
             </button>
           ))}
         </div>
@@ -84,8 +116,8 @@ export default function SettingsModal({
     {
       id: 'rotate',
       icon: '↻',
-      label: 'Auto-rotate globe',
-      hint: autoRotate ? 'Globe spins slowly' : 'Globe stays still',
+      label: t('autoRotate'),
+      hint: autoRotate ? t('globeSpins') : t('globeStill'),
       control: (
         <Toggle on={autoRotate} onClick={onToggleAutoRotate} dark={dark} />
       ),
@@ -93,8 +125,8 @@ export default function SettingsModal({
     {
       id: 'refresh',
       icon: '⟳',
-      label: 'Auto-refresh weather',
-      hint: autoRefresh ? 'Updates every 5 minutes' : 'Manual refresh only',
+      label: t('autoRefresh'),
+      hint: autoRefresh ? t('updatesEvery5') : t('manualRefresh'),
       control: (
         <Toggle on={autoRefresh} onClick={onToggleAutoRefresh} dark={dark} />
       ),
@@ -106,13 +138,13 @@ export default function SettingsModal({
       className="absolute inset-0 z-[80] flex items-center justify-center p-5"
       role="dialog"
       aria-modal="true"
-      aria-label="Settings"
+      aria-label={t('settings')}
     >
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('close')}
       />
 
       <div
@@ -131,10 +163,10 @@ export default function SettingsModal({
         <div className={`relative flex items-start justify-between border-b px-5 py-4 ${dark ? 'border-white/8' : 'border-slate-100'}`}>
           <div>
             <p className={`text-[10px] ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-              Preferences
+              {t('preferences')}
             </p>
             <h2 className={`mt-0.5 text-lg font-medium ${dark ? 'text-white' : 'text-slate-900'}`}>
-              Settings
+              {t('settings')}
             </h2>
           </div>
           <button
@@ -178,8 +210,7 @@ export default function SettingsModal({
         {/* Footer */}
         <div className={`border-t px-5 py-3.5 ${dark ? 'border-white/6' : 'border-slate-100'}`}>
           <p className={`text-[11px] leading-relaxed ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-            Weather data by <span className={dark ? 'text-white/50' : 'text-slate-600'}>Open-Meteo</span>
-            {' · '}free global forecast, no API key. Theme & units are saved on this device.
+            {t('openMeteoFooter')}
           </p>
           <button
             type="button"
@@ -190,7 +221,7 @@ export default function SettingsModal({
                 : 'bg-slate-900 text-white hover:bg-slate-800'
             }`}
           >
-            Done
+            {t('done')}
           </button>
         </div>
       </div>

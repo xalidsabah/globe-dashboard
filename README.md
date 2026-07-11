@@ -56,6 +56,7 @@ Works on desktop and mobile. Dark and light themes. Saves your favorites on this
 | **Outdoors** | Suggested best window in the next ~12 hours |
 | **Share links** | URL updates with the city so links open the same place |
 | **Auto day/night** | Optional theme that follows local sunlight |
+| **Languages** | English · Kurdish Kurmanji · Kurdish Sorani (RTL) |
 | **Favorites** | Star cities · quick switch · soft arcs on the globe |
 | **Share** | Share or copy current conditions |
 | **Units & theme** | °C / °F · light / dark · remembers your prefs |
