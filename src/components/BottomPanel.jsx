@@ -1,39 +1,10 @@
 import WeatherIcon from './WeatherIcon'
-import { formatDay, formatHour, windDir } from '../lib/weather'
+import { formatDay, formatHour } from '../lib/weather'
+import { evaluateConditions } from '../lib/risk'
 
 function t(c, unit) {
   if (c == null) return '—'
   return unit === 'F' ? Math.round((c * 9) / 5 + 32) : Math.round(c)
-}
-
-function riskFromWeather(c, day0) {
-  let riskScore = 12
-  let riskLabel = 'Low'
-  let riskStatus = 'Stable'
-  if (c) {
-    if (c.group === 'storm') {
-      riskScore = 78
-      riskLabel = 'High'
-      riskStatus = 'Alert'
-    } else if (c.group === 'rain' || c.group === 'snow') {
-      riskScore = 42
-      riskLabel = 'Medium'
-      riskStatus = 'Caution'
-    } else if (c.group === 'fog') {
-      riskScore = 35
-      riskLabel = 'Medium'
-      riskStatus = 'Watch'
-    } else if ((c.wind || 0) > 45) {
-      riskScore = 55
-      riskLabel = 'Medium'
-      riskStatus = 'Windy'
-    } else if ((day0?.uvMax || 0) > 7) {
-      riskScore = 38
-      riskLabel = 'Medium'
-      riskStatus = 'High UV'
-    }
-  }
-  return { riskScore, riskLabel, riskStatus }
 }
 
 const TABS = [
@@ -58,8 +29,13 @@ export default function BottomPanel({
   const daily = weather?.daily || []
   const tz = weather?.timezone
   const c = weather?.current
-  const day0 = daily[0]
-  const { riskScore, riskLabel, riskStatus } = riskFromWeather(c, day0)
+  const {
+    riskScore,
+    riskLabel,
+    riskStatus,
+    factors,
+    alerts,
+  } = evaluateConditions(weather, place)
 
   const riskTone =
     riskLabel === 'High'
@@ -315,43 +291,12 @@ export default function BottomPanel({
               </div>
             )}
 
-            {/* ALERTS */}
+            {/* ALERTS — derived from hourly/daily Open-Meteo signals */}
             {mode === 'alerts' && (
               <div className="space-y-2">
-                {[
-                  {
-                    level: riskLabel,
-                    title: c ? `${c.label} — ${place?.name || 'Location'}` : 'No location selected',
-                    detail: c
-                      ? `Wind ${Math.round(c.wind || 0)} km/h ${windDir(c.windDeg)} · Humidity ${Math.round(c.humidity || 0)}% · Pressure ${Math.round(c.pressure || 0)} hPa`
-                      : 'Select a city to evaluate conditions',
-                  },
-                  {
-                    level: (day0?.precipProb || 0) > 50 ? 'Medium' : 'Low',
-                    title: 'Precipitation',
-                    detail:
-                      day0?.precipProb != null
-                        ? `${Math.round(day0.precipProb)}% chance · ${day0.precipSum ?? 0} mm today`
-                        : '—',
-                  },
-                  {
-                    level: (day0?.uvMax || 0) >= 7 ? 'Medium' : 'Low',
-                    title: 'UV index',
-                    detail: day0?.uvMax != null ? `Max UV ${day0.uvMax.toFixed(1)} today` : '—',
-                  },
-                  {
-                    level: (c?.wind || 0) > 40 ? 'High' : 'Low',
-                    title: 'Wind',
-                    detail:
-                      c?.windGust != null
-                        ? `Gusts up to ${Math.round(c.windGust)} km/h`
-                        : c?.wind != null
-                          ? `Sustained ${Math.round(c.wind)} km/h`
-                          : '—',
-                  },
-                ].map((a) => (
+                {alerts.map((a) => (
                   <div
-                    key={a.title}
+                    key={a.id}
                     className={`flex gap-3 rounded-xl border px-3 py-2.5 ${
                       dark ? 'border-white/5 bg-white/[0.03]' : 'border-slate-200 bg-white/70'
                     }`}
@@ -371,12 +316,19 @@ export default function BottomPanel({
                       <p className={`text-xs font-medium ${dark ? 'text-white/90' : 'text-slate-800'}`}>
                         {a.title}
                       </p>
-                      <p className={`mt-0.5 text-[11px] leading-relaxed ${dark ? 'text-white/40' : 'text-slate-500'}`}>
+                      <p
+                        className={`mt-0.5 text-[11px] leading-relaxed ${
+                          dark ? 'text-white/40' : 'text-slate-500'
+                        }`}
+                      >
                         {a.detail}
                       </p>
                     </div>
                   </div>
                 ))}
+                <p className={`px-1 pt-1 text-[10px] ${dark ? 'text-white/25' : 'text-slate-400'}`}>
+                  Derived from forecast data — not official weather service warnings.
+                </p>
               </div>
             )}
           </div>
@@ -447,21 +399,12 @@ export default function BottomPanel({
 
               <div className="mt-3 space-y-2">
                 {[
-                  {
-                    label: 'Precip',
-                    value: Math.round(day0?.precipProb ?? 0),
-                    color: 'bg-sky-400',
-                  },
-                  {
-                    label: 'Wind',
-                    value: Math.min(100, Math.round((c?.wind || 0) * 1.6)),
-                    color: 'bg-violet-400',
-                  },
-                  {
-                    label: 'UV',
-                    value: Math.min(100, Math.round((c?.uv ?? day0?.uvMax ?? 0) * 10)),
-                    color: 'bg-amber-400',
-                  },
+                  { label: 'Precip', value: factors.precip, color: 'bg-sky-400' },
+                  { label: 'Wind', value: factors.wind, color: 'bg-violet-400' },
+                  { label: 'UV', value: factors.uv, color: 'bg-amber-400' },
+                  ...(factors.extreme > 0
+                    ? [{ label: 'Extreme', value: factors.extreme, color: 'bg-rose-400' }]
+                    : []),
                 ].map((row) => (
                   <div key={row.label}>
                     <div className="mb-0.5 flex justify-between text-[10px]">
@@ -470,7 +413,11 @@ export default function BottomPanel({
                         {row.value}%
                       </span>
                     </div>
-                    <div className={`h-1 overflow-hidden rounded-full ${dark ? 'bg-white/10' : 'bg-slate-200'}`}>
+                    <div
+                      className={`h-1 overflow-hidden rounded-full ${
+                        dark ? 'bg-white/10' : 'bg-slate-200'
+                      }`}
+                    >
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${row.color}`}
                         style={{ width: `${row.value}%` }}
@@ -481,7 +428,7 @@ export default function BottomPanel({
               </div>
 
               <p className={`mt-3 text-[10px] leading-relaxed ${dark ? 'text-white/30' : 'text-slate-400'}`}>
-                Open-Meteo · {tz || 'local time'}
+                Open-Meteo · {tz || 'local time'} · advisory only
               </p>
             </div>
           </div>

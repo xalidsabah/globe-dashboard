@@ -6,6 +6,7 @@ import LeftPromo from './components/LeftPromo'
 import StatsPanel from './components/StatsPanel'
 import BottomControls from './components/BottomControls'
 import BottomPanel from './components/BottomPanel'
+import FavoriteStrip from './components/FavoriteStrip'
 import { fetchWeather, fetchCitiesSnapshot, reverseGeocode, QUICK_CITIES } from './lib/weather'
 import {
   loadFavorites,
@@ -87,6 +88,7 @@ export default function App() {
     QUICK_CITIES.map((c) => ({ ...c, id: `city-${c.name}` }))
   )
   const [favorites, setFavorites] = useState(() => loadFavorites())
+  const [favSnaps, setFavSnaps] = useState(() => loadFavorites())
   const [weatherError, setWeatherError] = useState(false)
 
   const showToast = useCallback((msg) => {
@@ -166,6 +168,25 @@ export default function App() {
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Keep favorite strip temps fresh
+  useEffect(() => {
+    if (!favorites.length) {
+      setFavSnaps([])
+      return
+    }
+    let cancelled = false
+    fetchCitiesSnapshot(favorites)
+      .then((list) => {
+        if (!cancelled) setFavSnaps(list)
+      })
+      .catch(() => {
+        if (!cancelled) setFavSnaps(favorites)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [favorites])
 
   useEffect(() => {
     if (!online) showToast('You’re offline')
@@ -534,6 +555,15 @@ export default function App() {
               onRefresh={() => loadWeather(place)}
               hourly={weather?.hourly || []}
             />
+            {!panelOpen && (
+              <FavoriteStrip
+                cities={favSnaps}
+                place={place}
+                unit={unit}
+                dark={dark}
+                onSelect={(f) => selectPlace(f, { openHourly: true })}
+              />
+            )}
           </>
         )}
 
