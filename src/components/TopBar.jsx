@@ -11,7 +11,7 @@ export default function TopBar({
   unit,
   onToggleUnit,
   onSettings,
-  onLogout,
+  onClearData,
   onOpenSearch,
   onLocate,
   onShare,
@@ -192,7 +192,7 @@ export default function TopBar({
                 dark ? 'text-white/85' : 'text-slate-700'
               }`}
             >
-              Kai
+              Guest
             </span>
             <svg
               width="10"
@@ -282,24 +282,23 @@ export default function TopBar({
                   </span>{' '}
                   Settings
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    onCloseUserMenu()
-                    onLogout?.()
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] ${
-                    dark
-                      ? 'text-rose-300/90 hover:bg-rose-500/10'
-                      : 'text-rose-600 hover:bg-rose-50'
-                  }`}
-                >
-                  <span className="opacity-60" aria-hidden>
-                    ⎋
-                  </span>{' '}
-                  Log out
-                </button>
+                {onClearData && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onCloseUserMenu()
+                      onClearData()
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] ${
+                      dark
+                        ? 'text-rose-300/90 hover:bg-rose-500/10'
+                        : 'text-rose-600 hover:bg-rose-50'
+                    }`}
+                  >
+                    Clear local data
+                  </button>
+                )}
               </div>
             </>
           )}

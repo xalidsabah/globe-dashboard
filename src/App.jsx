@@ -16,6 +16,9 @@ import {
   normalizePlace,
   loadLastPlace,
   saveLastPlace,
+  RECENT_KEY,
+  FAVORITES_KEY,
+  LAST_PLACE_KEY,
 } from './lib/places'
 import useOnline from './hooks/useOnline'
 
@@ -204,49 +207,6 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', onFs)
   }, [])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e) => {
-      const tag = document.activeElement?.tagName
-      const typing = tag === 'INPUT' || tag === 'TEXTAREA'
-      if (e.key === 'Escape') {
-        if (searchOpen) setSearchOpen(false)
-        else if (settingsOpen) setSettingsOpen(false)
-        else if (howOpen) setHowOpen(false)
-        else if (userMenuOpen) setUserMenuOpen(false)
-        else if (panelOpen) {
-          setPanelOpen(false)
-          setActiveNav('home')
-        } else if (document.fullscreenElement) {
-          document.exitFullscreen?.().catch(() => {})
-        }
-        return
-      }
-      if (typing) return
-      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
-        e.preventDefault()
-        setPanelOpen(false)
-        setSearchOpen(true)
-      } else if (e.key === 'f' || e.key === 'F') {
-        if (!e.metaKey && !e.ctrlKey) {
-          e.preventDefault()
-          toggleFullscreen()
-        }
-      } else if (e.key === 'h' || e.key === 'H') {
-        setPanelMode('hourly')
-        setPanelOpen(true)
-        setActiveNav('forecast')
-      } else if (e.key === 'd' || e.key === 'D') {
-        setPanelMode('analytics')
-        setPanelOpen(true)
-        setActiveNav('chart')
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchOpen, settingsOpen, howOpen, userMenuOpen, panelOpen])
-
   const selectPlace = useCallback(
     (p, { openHourly = true, fromSearch = false } = {}) => {
       const placeObj = toPlace(p)
@@ -319,6 +279,26 @@ export default function App() {
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
     )
   }, [selectPlace, showToast])
+
+  const clearLocalData = useCallback(() => {
+    try {
+      localStorage.removeItem(PREFS_KEY)
+      localStorage.removeItem(RECENT_KEY)
+      localStorage.removeItem(FAVORITES_KEY)
+      localStorage.removeItem(LAST_PLACE_KEY)
+    } catch {
+      /* ignore */
+    }
+    setFavorites([])
+    setFavSnaps([])
+    setPlace(DEFAULT_PLACE)
+    setUnit('C')
+    setDark(true)
+    setAutoRotate(true)
+    setAutoRefresh(true)
+    loadWeather(DEFAULT_PLACE, { silent: true })
+    showToast('Local data cleared')
+  }, [loadWeather, showToast])
 
   const sharePlace = useCallback(async () => {
     if (!place) return
@@ -397,7 +377,7 @@ export default function App() {
     showToast('View reset')
   }
 
-  const toggleFullscreen = async () => {
+  const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
         setPanelOpen(false)
@@ -416,7 +396,64 @@ export default function App() {
         return next
       })
     }
-  }
+  }, [showToast])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA'
+      if (e.key === 'Escape') {
+        if (searchOpen) setSearchOpen(false)
+        else if (settingsOpen) setSettingsOpen(false)
+        else if (howOpen) setHowOpen(false)
+        else if (userMenuOpen) setUserMenuOpen(false)
+        else if (panelOpen) {
+          setPanelOpen(false)
+          setActiveNav('home')
+        } else if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => {})
+        }
+        return
+      }
+      if (typing) return
+      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault()
+        setPanelOpen(false)
+        setSearchOpen(true)
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault()
+          toggleFullscreen()
+        }
+      } else if (e.key === 'h' || e.key === 'H') {
+        setPanelMode('hourly')
+        setPanelOpen(true)
+        setActiveNav('forecast')
+      } else if (e.key === 'd' || e.key === 'D') {
+        setPanelMode('analytics')
+        setPanelOpen(true)
+        setActiveNav('chart')
+      } else if ((e.key === 'l' || e.key === 'L') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        locateMe()
+      } else if ((e.key === 's' || e.key === 'S') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        sharePlace()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    searchOpen,
+    settingsOpen,
+    howOpen,
+    userMenuOpen,
+    panelOpen,
+    locateMe,
+    sharePlace,
+    toggleFullscreen,
+  ])
 
   const setUnitPersist = (u) => {
     setUnit(u)
@@ -469,6 +506,7 @@ export default function App() {
               dark={dark}
               focus={focus}
               cities={citySnaps}
+              favorites={favorites}
               unit={unit}
               onSelectCity={(city) => selectPlace(city, { openHourly: true })}
             />
@@ -485,9 +523,9 @@ export default function App() {
             expanded={sidebarExpanded}
             onToggleExpand={() => setSidebarExpanded((e) => !e)}
             onSettings={() => setSettingsOpen(true)}
-            onLogout={() => {
+            onClearData={() => {
               setUserMenuOpen(false)
-              showToast('Signed out (demo)')
+              clearLocalData()
             }}
           />
         )}
@@ -510,7 +548,7 @@ export default function App() {
             unit={unit}
             onToggleUnit={() => setUnitPersist(unit === 'C' ? 'F' : 'C')}
             onSettings={() => setSettingsOpen(true)}
-            onLogout={() => showToast('Signed out (demo)')}
+            onClearData={clearLocalData}
             onOpenSearch={() => {
               setPanelOpen(false)
               setSearchOpen(true)

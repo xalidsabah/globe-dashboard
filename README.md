@@ -58,6 +58,8 @@ SPA note: if the host rewrites unknown paths, point them to `index.html` (defaul
 | `H` | Hourly panel |
 | `D` | 7-day panel |
 | `F` | Fullscreen |
+| `L` | Use my location |
+| `S` | Share weather |
 | `Esc` | Close / exit |
 
 ## Design

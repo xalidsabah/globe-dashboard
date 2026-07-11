@@ -637,3 +637,32 @@ button:disabled {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+.stage-frame:not(.is-fullscreen) {
+  /* keep chrome away from notches / home indicator */
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* Larger tap targets on touch */
+@media (pointer: coarse) {
+  .glass-pill button,
+  button.glass-pill {
+    min-height: 2.25rem;
+  }
+
+  .city-pin span:last-child {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
+/* Favorites strip clears home indicator */
+.fav-strip-safe {
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .fav-strip-safe {
+    bottom: 5rem;
+  }
+}

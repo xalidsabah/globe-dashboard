@@ -18,7 +18,10 @@ export default function BottomControls({
     ? 'h-8 w-8 border border-white/10 bg-[#0c1424]/80 text-white/75 hover:bg-white/10 hover:text-white'
     : 'h-8 w-8 border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50'
 
-  const lift = panelOpen && !fullscreen ? 'bottom-[min(46vh,300px)]' : 'bottom-4 sm:bottom-5'
+  const lift =
+    panelOpen && !fullscreen
+      ? 'bottom-[min(46vh,300px)]'
+      : 'bottom-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-5'
 
   return (
     <>

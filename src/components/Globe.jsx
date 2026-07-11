@@ -74,7 +74,22 @@ function AtmosphereLayers({ dark }) {
   )
 }
 
-function EarthGlobe({ dark, points }) {
+function weatherColor(group, dark, active) {
+  if (active) return '#f5c518'
+  const map = {
+    clear: dark ? '#fbbf24' : '#d97706',
+    cloud: dark ? '#94a3b8' : '#64748b',
+    rain: dark ? '#38bdf8' : '#0284c7',
+    drizzle: dark ? '#7dd3fc' : '#0ea5e9',
+    snow: dark ? '#e0f2fe' : '#7dd3fc',
+    sleet: dark ? '#a5f3fc' : '#22d3ee',
+    storm: dark ? '#c084fc' : '#7c3aed',
+    fog: dark ? '#a8a29e' : '#78716c',
+  }
+  return map[group] || (dark ? '#60a5fa' : '#1d4ed8')
+}
+
+function EarthGlobe({ dark, points, arcs }) {
   const globeObj = useMemo(() => new ThreeGlobe({ animateIn: false }).showAtmosphere(true), [])
 
   useEffect(() => {
@@ -85,6 +100,12 @@ function EarthGlobe({ dark, points }) {
       .atmosphereColor(dark ? '#4d8cff' : '#7ec8ff')
       .atmosphereAltitude(dark ? 0.32 : 0.28)
       .arcsData([])
+      .arcColor('color')
+      .arcAltitude(0.18)
+      .arcStroke(0.45)
+      .arcDashLength(0.4)
+      .arcDashGap(0.6)
+      .arcDashAnimateTime(2800)
 
     const mat = globeObj.globeMaterial()
     if (mat) {
@@ -125,8 +146,11 @@ function EarthGlobe({ dark, points }) {
       .pointAltitude(0.014)
       .pointRadius('size')
       .pointColor('color')
-      .arcsData([])
   }, [points, globeObj])
+
+  useEffect(() => {
+    globeObj.arcsData(arcs || [])
+  }, [arcs, globeObj])
 
   useEffect(
     () => () => {
@@ -203,13 +227,12 @@ function CityPin({ city, active, dark, unit, onSelect }) {
           )}
         </span>
         <span
-          className={`h-2.5 w-2.5 rounded-full ring-2 ${
-            active
-              ? 'bg-amber-400 shadow-[0_0_12px_rgba(245,197,24,0.9)] ring-amber-400/40'
-              : dark
-                ? 'bg-sky-400 ring-sky-400/30 group-hover:bg-sky-300'
-                : 'bg-sky-500 ring-sky-500/30'
-          }`}
+          className="h-2.5 w-2.5 rounded-full ring-2 shadow-md"
+          style={{
+            background: weatherColor(city.group || city.icon, dark, active),
+            boxShadow: active ? '0 0 12px rgba(245,197,24,0.9)' : undefined,
+            ringColor: active ? 'rgba(245,197,24,0.4)' : 'transparent',
+          }}
         />
       </button>
     </Html>
@@ -234,6 +257,7 @@ export default function Globe({
   dark = true,
   focus = null,
   cities = [],
+  favorites = [],
   unit = 'C',
   onSelectCity,
 }) {
@@ -302,10 +326,42 @@ export default function Globe({
         lat: c.lat,
         lng: c.lng,
         size: active ? 0.55 : 0.28,
-        color: active ? '#f5c518' : dark ? '#60a5fa' : '#1d4ed8',
+        color: weatherColor(c.group, dark, active),
       }
     })
   }, [cities, focus, dark])
+
+  // Soft arcs linking favorites (and focus when starred)
+  const arcs = useMemo(() => {
+    const nodes = (favorites || []).filter((f) => f.lat != null && f.lng != null)
+    if (nodes.length < 2) return []
+    const stroke = dark ? 'rgba(125, 211, 252, 0.45)' : 'rgba(14, 165, 233, 0.4)'
+    const out = []
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i]
+      const b = nodes[i + 1]
+      out.push({
+        startLat: a.lat,
+        startLng: a.lng,
+        endLat: b.lat,
+        endLng: b.lng,
+        color: stroke,
+      })
+    }
+    // close ring if 3+ favorites
+    if (nodes.length >= 3) {
+      const a = nodes[nodes.length - 1]
+      const b = nodes[0]
+      out.push({
+        startLat: a.lat,
+        startLng: a.lng,
+        endLat: b.lat,
+        endLng: b.lng,
+        color: stroke,
+      })
+    }
+    return out.slice(0, 12)
+  }, [favorites, dark])
 
   // Show a curated set of well-placed labels (coords verified)
   const labelCities = useMemo(() => {
@@ -331,13 +387,17 @@ export default function Globe({
       'Lagos',
       'Buenos Aires',
     ])
+    const favKeys = new Set(
+      (favorites || []).map((f) => `${Number(f.lat).toFixed(1)},${Number(f.lng).toFixed(1)}`)
+    )
     return (cities || []).filter((c) => {
       if (major.has(c.name)) return true
       if (focus && Math.abs(c.lat - focus.lat) < 0.5 && Math.abs(c.lng - focus.lng) < 0.5)
         return true
+      if (favKeys.has(`${Number(c.lat).toFixed(1)},${Number(c.lng).toFixed(1)}`)) return true
       return false
     })
-  }, [cities, focus])
+  }, [cities, focus, favorites])
 
   return (
     <>
@@ -360,7 +420,7 @@ export default function Globe({
 
       <group ref={groupRef} scale={0.95}>
         <AtmosphereLayers dark={dark} />
-        <EarthGlobe dark={dark} points={points} />
+        <EarthGlobe dark={dark} points={points} arcs={arcs} />
         {labelCities.map((city) => {
           const active =
             focus &&

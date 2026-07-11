@@ -33,7 +33,7 @@ export default function Sidebar({
   onNav,
   dark = true,
   onSettings,
-  onLogout,
+  onClearData,
   expanded = false,
   onToggleExpand,
   hidden = false,
@@ -171,35 +171,37 @@ export default function Sidebar({
           </svg>
           {expanded && <span className="text-[12px] font-medium">Settings</span>}
         </button>
-        <button
-          type="button"
-          onClick={onLogout}
-          title="Log out"
-          className={`flex h-10 items-center rounded-xl transition ${
-            expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
-          } ${
-            dark
-              ? 'text-white/40 hover:bg-rose-500/10 hover:text-rose-300'
-              : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'
-          }`}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.65"
-            className="shrink-0"
+        {onClearData && (
+          <button
+            type="button"
+            onClick={onClearData}
+            title="Clear local data"
+            className={`flex h-10 items-center rounded-xl transition ${
+              expanded ? 'w-full gap-3 px-2.5' : 'w-10 justify-center'
+            } ${
+              dark
+                ? 'text-white/40 hover:bg-rose-500/10 hover:text-rose-300'
+                : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'
+            }`}
           >
-            <path
-              d="M9 7V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-2"
-              strokeLinecap="round"
-            />
-            <path d="M3 12h11M10 8l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {expanded && <span className="text-[12px] font-medium">Log out</span>}
-        </button>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.65"
+              className="shrink-0"
+            >
+              <path
+                d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {expanded && <span className="text-[12px] font-medium">Clear data</span>}
+          </button>
+        )}
       </div>
     </aside>
   )

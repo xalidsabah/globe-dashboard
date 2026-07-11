@@ -25,7 +25,7 @@ export default function FavoriteStrip({
 
   return (
     <div
-      className={`pointer-events-auto absolute bottom-20 left-1/2 z-25 flex max-w-[min(92vw,520px)] -translate-x-1/2 items-center gap-1 overflow-x-auto panel-scroll rounded-full border px-1.5 py-1 backdrop-blur-md ${
+      className={`fav-strip-safe pointer-events-auto absolute left-1/2 z-25 flex max-w-[min(92vw,520px)] -translate-x-1/2 items-center gap-1 overflow-x-auto panel-scroll rounded-full border px-1.5 py-1 backdrop-blur-md ${
         dark
           ? 'border-white/[0.08] bg-black/45'
           : 'border-slate-200/80 bg-white/85 shadow-sm'
