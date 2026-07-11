@@ -374,30 +374,37 @@ export default function App() {
     showToast(t('toast_finding'))
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords
+        const you = t('yourLocation')
         try {
-          const { latitude: lat, longitude: lng } = pos.coords
+          // Use reverse geocode only for coords/timezone/country (weather + capital).
+          // Always label the pin as "Your location" — never the nearby city name.
           const found = await reverseGeocode(lat, lng)
           selectPlace(
             {
               ...found,
+              id: `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
+              name: you,
+              label: you,
               lat,
               lng,
+              admin1: '',
             },
             { openHourly: true, fromSearch: true }
           )
-          showToast(t('toast_nearYou', { name: found.name }))
+          showToast(t('toast_locFound'))
         } catch (e) {
           console.error(e)
           selectPlace(
             {
-              id: `geo-${pos.coords.latitude},${pos.coords.longitude}`,
-              name: t('yourLocation'),
+              id: `geo-${lat.toFixed(4)},${lng.toFixed(4)}`,
+              name: you,
               country: '',
               admin1: '',
-              lat: pos.coords.latitude,
-              lng: pos.coords.longitude,
+              lat,
+              lng,
               timezone: 'auto',
-              label: t('yourLocation'),
+              label: you,
             },
             { openHourly: true, fromSearch: true }
           )
