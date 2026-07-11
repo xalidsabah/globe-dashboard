@@ -3,6 +3,7 @@
 Live global weather on a 3D Earth — powered by [Open-Meteo](https://open-meteo.com/) (no API key).
 
 **Live:** [https://globe-dashboard-eight.vercel.app](https://globe-dashboard-eight.vercel.app)  
+**Source:** [github.com/xalidsabah/globe-dashboard](https://github.com/xalidsabah/globe-dashboard)  
 **Version:** `0.1.0` · see [CHANGELOG.md](CHANGELOG.md)
 
 ## Run
@@ -33,18 +34,15 @@ Or static host: build, publish `dist/`. No env vars required.
 
 **Custom domain (optional):** Vercel → Project → Settings → Domains → add domain and follow DNS (CNAME/A).
 
-## GitHub remote (one-time)
+## Source & CI
 
-This repo currently has no `origin`. To publish source + enable CI:
+Repo: **https://github.com/xalidsabah/globe-dashboard**
 
 ```bash
-# create empty repo on GitHub, then:
-git remote add origin https://github.com/<you>/globe-dashboard.git
-git push -u origin master
-git push origin v0.1.0
+git clone https://github.com/xalidsabah/globe-dashboard.git
 ```
 
-CI runs on push/PR to `master`/`main` (`.github/workflows/ci.yml`): **lint + build**.
+CI (`.github/workflows/ci.yml`) runs **lint + build** on push/PR to `master`/`main`.
 
 ## Features
 
